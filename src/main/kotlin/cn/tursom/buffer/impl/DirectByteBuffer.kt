@@ -37,7 +37,6 @@ class DirectByteBuffer(private val buffer: java.nio.ByteBuffer) : ByteBuffer {
   }
 
   override fun reset() {
-    buffer.slice()
     buffer.limit(writePosition)
     buffer.position(readPosition)
     buffer.compact()
