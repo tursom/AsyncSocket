@@ -1,0 +1,220 @@
+package cn.tursom.buffer
+
+import cn.tursom.utils.forEachIndex
+import java.io.OutputStream
+import kotlin.math.min
+
+/**
+ * 针对 java nio 的弱智 ByteBuffer 的简单封装
+ * 支持读写 buffer 分离
+ */
+@Suppress("unused")
+interface ByteBuffer {
+  fun readBuffer(): java.nio.ByteBuffer
+  fun finishRead(buffer: java.nio.ByteBuffer)
+  fun writeBuffer(): java.nio.ByteBuffer
+  fun finishWrite(buffer: java.nio.ByteBuffer)
+
+  /**
+   * 使用读 buffer，ByteBuffer 实现类有义务维护指针正常推进
+   */
+  fun <T> readBuffer(block: (java.nio.ByteBuffer) -> T): T {
+    val buffer = readBuffer()
+    val result = block(buffer)
+    finishRead(buffer)
+    return result
+  }
+
+  /**
+   * 使用写 buffer，ByteBuffer 实现类有义务维护指针正常推进
+   */
+  fun <T> writeBuffer(block: (java.nio.ByteBuffer) -> T): T {
+      val buffer = writeBuffer()
+      val result = block(buffer)
+      finishWrite(buffer)
+      return result
+  }
+
+  val readable: Int get() = readBuffer { it.remaining() }
+  val writeable: Int get() = writeBuffer { it.remaining() }
+
+  val hasArray: Boolean
+  val array: ByteArray
+
+  val capacity: Int
+  val arrayOffset: Int
+  var writePosition: Int
+  var readPosition: Int
+
+  val writeOffset: Int get() = arrayOffset + writePosition
+  val readOffset: Int get() = arrayOffset + readPosition
+
+  fun reset()
+  fun slice(offset: Int, size: Int): ByteBuffer
+
+  fun clear() {
+    readPosition = 0
+    writePosition = 0
+  }
+
+  fun get(): Byte = readBuffer { it.get() }
+
+  fun getChar(): Char = readBuffer { it.char }
+
+  fun getShort(): Short = readBuffer { it.short }
+
+  fun getInt(): Int = readBuffer { it.int }
+
+  fun getLong(): Long = readBuffer { it.long }
+
+  fun getFloat(): Float = readBuffer { it.float }
+
+  fun getDouble(): Double = readBuffer { it.double }
+
+
+  fun getBytes(size: Int = readable): ByteArray = readBuffer {
+    val bytes = ByteArray(size)
+    it.get(bytes)
+    bytes
+  }
+
+  fun getString(size: Int = readable): String = String(getBytes(size))
+
+  fun toString(size: Int): String {
+    //logE("AdvanceByteBuffer.toString(size: Int): $this")
+    //val rp = readPosition
+    val bytes = getBytes(size)
+    //readPosition = rp
+    //logE("AdvanceByteBuffer.toString(size: Int): $this")
+    return String(bytes)
+  }
+
+  fun writeTo(buffer: ByteArray, bufferOffset: Int = 0, size: Int = min(readable, buffer.size)): Int {
+    val readSize = min(readable, size)
+    if (hasArray) {
+      array.copyInto(buffer, bufferOffset, readOffset, readOffset + readSize)
+      readPosition += readOffset
+      reset()
+    } else {
+      readBuffer {
+        it.put(buffer, bufferOffset, readSize)
+      }
+    }
+    return readSize
+  }
+
+  fun writeTo(os: OutputStream): Int {
+    val size = readable
+    if (hasArray) {
+      os.write(array, readOffset, size)
+      readPosition += size
+      reset()
+    } else {
+      val buffer = ByteArray(1024)
+      readBuffer {
+        while (it.remaining() > 0) {
+          it.put(buffer)
+          os.write(buffer)
+        }
+      }
+    }
+    return size
+  }
+
+  fun writeTo(buffer: ByteBuffer): Int {
+    val size = min(readable, buffer.readable)
+    if (hasArray) {
+      buffer.put(array, readOffset, size)
+      readPosition += size
+      reset()
+    } else {
+      readBuffer { read ->
+        buffer.writeBuffer { write -> write.put(read) }
+      }
+    }
+    return size
+  }
+
+  fun toByteArray() = getBytes()
+
+
+  /*
+   * 数据写入方法
+   */
+
+  fun put(byte: Byte) {
+    writeBuffer {
+      it.put(byte)
+    }
+  }
+
+  fun put(char: Char) {
+    writeBuffer {
+      it.putChar(char)
+    }
+  }
+
+  fun put(short: Short) {
+    writeBuffer {
+      it.putShort(short)
+    }
+  }
+
+  fun put(int: Int) {
+    writeBuffer {
+      it.putInt(int)
+    }
+  }
+
+  fun put(long: Long) {
+    writeBuffer {
+      it.putLong(long)
+    }
+  }
+
+  fun put(float: Float) {
+    writeBuffer {
+      it.putFloat(float)
+    }
+  }
+
+  fun put(double: Double) {
+    writeBuffer {
+      it.putDouble(double)
+    }
+  }
+
+  fun put(str: String) {
+    put(str.toByteArray())
+  }
+
+  fun put(byteArray: ByteArray, startIndex: Int = 0, endIndex: Int = byteArray.size - startIndex) {
+    writeBuffer {
+      it.put(byteArray, startIndex, endIndex - startIndex)
+    }
+  }
+
+  fun put(array: CharArray, index: Int = 0, size: Int = array.size - index) {
+    array.forEachIndex(index, index + size - 1, this::put)
+  }
+
+  fun put(array: ShortArray, index: Int = 0, size: Int = array.size - index) {
+    array.forEachIndex(index, index + size - 1, this::put)
+  }
+
+  fun put(array: IntArray, index: Int = 0, size: Int = array.size - index) {
+    array.forEachIndex(index, index + size - 1, this::put)
+  }
+
+  fun put(array: LongArray, index: Int = 0, size: Int = array.size - index) {
+    array.forEachIndex(index, index + size - 1, this::put)
+  }
+
+  fun put(array: FloatArray, index: Int = 0, size: Int = array.size - index) {
+    array.forEachIndex(index, index + size - 1, this::put)
+  }
+
+  fun put(array: DoubleArray, index: Int = 0, size: Int = array.size - index) {
+    array.forEachIndex(index, index + size - 1, this::put)
+  }
+}
