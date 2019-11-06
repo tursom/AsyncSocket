@@ -5,7 +5,7 @@ import cn.tursom.buffer.impl.HeapByteBuffer
 import cn.tursom.pool.DirectMemoryPool
 import cn.tursom.pool.MemoryPool
 import cn.tursom.pool.memory
-import cn.tursom.socket.AsyncNioSocket
+import cn.tursom.socket.NioSocket
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.GlobalScope
 
@@ -19,7 +19,7 @@ class BuffedNioServer(
     memoryPool: MemoryPool,
     backlog: Int = 50,
     coroutineScope: CoroutineScope = GlobalScope,
-    handler: suspend AsyncNioSocket.(buffer: ByteBuffer) -> Unit
+    handler: suspend NioSocket.(buffer: ByteBuffer) -> Unit
 ) : NioServer(port, backlog, coroutineScope, {
     memoryPool.memory {
         handler(it ?: HeapByteBuffer(memoryPool.blockSize))
@@ -31,6 +31,6 @@ class BuffedNioServer(
         blockCount: Int = 128,
         backlog: Int = 50,
         coroutineScope: CoroutineScope = GlobalScope,
-        handler: suspend AsyncNioSocket.(buffer: ByteBuffer) -> Unit
+        handler: suspend NioSocket.(buffer: ByteBuffer) -> Unit
     ) : this(port, DirectMemoryPool(blockSize, blockCount), backlog, coroutineScope, handler)
 }

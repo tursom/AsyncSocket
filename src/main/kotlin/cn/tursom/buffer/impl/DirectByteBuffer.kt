@@ -17,8 +17,10 @@ class DirectByteBuffer(private val buffer: java.nio.ByteBuffer) : ByteBuffer {
   override var readPosition: Int = 0
 
   override fun readBuffer(): java.nio.ByteBuffer {
-    buffer.limit(writePosition)
-    buffer.position(readPosition)
+    if (buffer.limit() != writePosition)
+      buffer.limit(writePosition)
+    if (buffer.position() != readPosition)
+      buffer.position(readPosition)
     return buffer
   }
 
@@ -27,8 +29,10 @@ class DirectByteBuffer(private val buffer: java.nio.ByteBuffer) : ByteBuffer {
   }
 
   override fun writeBuffer(): java.nio.ByteBuffer {
-    buffer.limit(capacity)
-    buffer.position(writePosition)
+    if (buffer.limit() != capacity)
+      buffer.limit(capacity)
+    if (buffer.position() != writePosition)
+      buffer.position(writePosition)
     return buffer
   }
 
@@ -45,9 +49,8 @@ class DirectByteBuffer(private val buffer: java.nio.ByteBuffer) : ByteBuffer {
   }
 
   override fun slice(offset: Int, size: Int): ByteBuffer {
-    buffer.limit(capacity)
-    buffer.position(offset)
     buffer.limit(offset + size)
+    buffer.position(offset)
     return DirectByteBuffer(buffer.slice())
   }
 

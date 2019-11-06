@@ -12,9 +12,9 @@ import kotlin.coroutines.resumeWithException
 import kotlin.coroutines.suspendCoroutine
 
 @Suppress("MemberVisibilityCanBePrivate")
-object AsyncNioClient {
+object NioClient {
     private const val TIMEOUT = 1000L
-    private val protocol = AsyncNioSocket.nioSocketProtocol
+    private val protocol = NioSocket.nioSocketProtocol
     @JvmStatic
     private val nioThread = WorkerLoopNioThread("nioClient", isDaemon = true) { nioThread ->
         val selector = nioThread.selector
@@ -46,10 +46,10 @@ object AsyncNioClient {
         }
     }
 
-    suspend fun connect(host: String, port: Int, timeout: Long = 0): AsyncNioSocket {
+    suspend fun connect(host: String, port: Int, timeout: Long = 0): NioSocket {
         val key: SelectionKey = suspendCoroutine { cont ->
             val channel = getConnection(host, port)
-            val timeoutTask = if (timeout > 0) AsyncNioSocket.timer.exec(timeout) {
+            val timeoutTask = if (timeout > 0) NioSocket.timer.exec(timeout) {
                 channel.close()
                 cont.resumeWithException(TimeoutException())
             } else {
@@ -60,7 +60,7 @@ object AsyncNioClient {
                 cont.resume(key)
             }
         }
-        return AsyncNioSocket(key, nioThread)
+        return NioSocket(key, nioThread)
     }
 
     private fun getConnection(host: String, port: Int): SelectableChannel {

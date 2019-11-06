@@ -15,11 +15,9 @@ import kotlin.coroutines.resumeWithException
 import kotlin.coroutines.suspendCoroutine
 
 /**
- * 利用 SelectionKey 的 attachment 进行状态的传输
- * 导致该类无法利用 SelectionKey 的 attachment
- * 但是对于一般的应用而言是足够使用的
+ * 异步协程套接字对象
  */
-class AsyncNioSocket(override val key: SelectionKey, override val nioThread: NioThread) : AsyncSocket {
+class NioSocket(override val key: SelectionKey, override val nioThread: NioThread) : AsyncSocket {
   override val channel: SocketChannel = key.channel() as SocketChannel
 
   override suspend fun read(buffer: ByteBuffer, timeout: Long): Int {

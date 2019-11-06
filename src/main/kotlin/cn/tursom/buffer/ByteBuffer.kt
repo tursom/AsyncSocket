@@ -10,11 +10,6 @@ import kotlin.math.min
  */
 @Suppress("unused")
 interface ByteBuffer {
-  fun readBuffer(): java.nio.ByteBuffer
-  fun finishRead(buffer: java.nio.ByteBuffer)
-  fun writeBuffer(): java.nio.ByteBuffer
-  fun finishWrite(buffer: java.nio.ByteBuffer)
-
   /**
    * 使用读 buffer，ByteBuffer 实现类有义务维护指针正常推进
    */
@@ -50,11 +45,16 @@ interface ByteBuffer {
   var writePosition: Int
   var readPosition: Int
 
-  val writeOffset: Int get() = arrayOffset + writePosition
-  val readOffset: Int get() = arrayOffset + readPosition
+  fun readBuffer(): java.nio.ByteBuffer
+  fun finishRead(buffer: java.nio.ByteBuffer)
+  fun writeBuffer(): java.nio.ByteBuffer
+  fun finishWrite(buffer: java.nio.ByteBuffer)
 
   fun reset()
   fun slice(offset: Int, size: Int): ByteBuffer
+
+  val writeOffset: Int get() = arrayOffset + writePosition
+  val readOffset: Int get() = arrayOffset + readPosition
 
   fun clear() {
     readPosition = 0
@@ -62,19 +62,12 @@ interface ByteBuffer {
   }
 
   fun get(): Byte = readBuffer { it.get() }
-
   fun getChar(): Char = readBuffer { it.char }
-
   fun getShort(): Short = readBuffer { it.short }
-
   fun getInt(): Int = readBuffer { it.int }
-
   fun getLong(): Long = readBuffer { it.long }
-
   fun getFloat(): Float = readBuffer { it.float }
-
   fun getDouble(): Double = readBuffer { it.double }
-
 
   fun getBytes(size: Int = readable): ByteArray = readBuffer {
     val bytes = ByteArray(size)
@@ -85,11 +78,8 @@ interface ByteBuffer {
   fun getString(size: Int = readable): String = String(getBytes(size))
 
   fun toString(size: Int): String {
-    //logE("AdvanceByteBuffer.toString(size: Int): $this")
-    //val rp = readPosition
     val bytes = getBytes(size)
-    //readPosition = rp
-    //logE("AdvanceByteBuffer.toString(size: Int): $this")
+    readPosition -= bytes.size
     return String(bytes)
   }
 
@@ -146,55 +136,23 @@ interface ByteBuffer {
    * 数据写入方法
    */
 
-  fun put(byte: Byte) {
-    writeBuffer {
-      it.put(byte)
-    }
-  }
-
-  fun put(char: Char) {
-    writeBuffer {
-      it.putChar(char)
-    }
-  }
-
-  fun put(short: Short) {
-    writeBuffer {
-      it.putShort(short)
-    }
-  }
-
-  fun put(int: Int) {
-    writeBuffer {
-      it.putInt(int)
-    }
-  }
-
-  fun put(long: Long) {
-    writeBuffer {
-      it.putLong(long)
-    }
-  }
-
-  fun put(float: Float) {
-    writeBuffer {
-      it.putFloat(float)
-    }
-  }
-
-  fun put(double: Double) {
-    writeBuffer {
-      it.putDouble(double)
-    }
-  }
-
-  fun put(str: String) {
-    put(str.toByteArray())
-  }
+  fun put(byte: Byte): Unit = writeBuffer { it.put(byte) }
+  fun put(char: Char): Unit = writeBuffer { it.putChar(char) }
+  fun put(short: Short): Unit = writeBuffer { it.putShort(short) }
+  fun put(int: Int): Unit = writeBuffer { it.putInt(int) }
+  fun put(long: Long): Unit = writeBuffer { it.putLong(long) }
+  fun put(float: Float): Unit = writeBuffer { it.putFloat(float) }
+  fun put(double: Double): Unit = writeBuffer { it.putDouble(double) }
+  fun put(str: String): Unit = put(str.toByteArray())
 
   fun put(byteArray: ByteArray, startIndex: Int = 0, endIndex: Int = byteArray.size - startIndex) {
-    writeBuffer {
-      it.put(byteArray, startIndex, endIndex - startIndex)
+    if (hasArray) {
+      byteArray.copyInto(array, writeOffset, startIndex, endIndex)
+      writePosition += endIndex - startIndex
+    } else {
+      writeBuffer {
+        it.put(byteArray, startIndex, endIndex - startIndex)
+      }
     }
   }
 
