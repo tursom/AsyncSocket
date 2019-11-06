@@ -1,6 +1,8 @@
 package cn.tursom.socket
 
 import cn.tursom.buffer.ByteBuffer
+import cn.tursom.buffer.read
+import cn.tursom.buffer.write
 import cn.tursom.socket.niothread.NioThread
 import cn.tursom.timer.TimerTask
 import cn.tursom.timer.WheelTimer
@@ -96,7 +98,11 @@ class AsyncNioSocket(override val key: SelectionKey, override val nioThread: Nio
   data class Context(val cont: Continuation<Int>, val timeoutTask: TimerTask? = null)
   data class ConnectContext(val cont: Continuation<SelectionKey>, val timeoutTask: TimerTask? = null)
 
+  /**
+   * 伴生对象
+   */
   companion object {
+
     val nioSocketProtocol = object : NioProtocol {
       override fun handleConnect(key: SelectionKey, nioThread: NioThread) {
         key.interestOps(0)
@@ -138,27 +144,5 @@ class AsyncNioSocket(override val key: SelectionKey, override val nioThread: Nio
 
     const val emptyBufferCode = 0
     const val emptyBufferLongCode = 0L
-
-    fun SocketChannel.read(buffer: ByteBuffer): Int {
-      return buffer.readBuffer { read(it) }
-    }
-
-    fun SocketChannel.write(buffer: ByteBuffer): Int {
-      return buffer.readBuffer { write(it) }
-    }
-
-    fun SocketChannel.read(buffers: Array<out ByteBuffer>): Long {
-      val bufferArray = Array(buffers.size) { buffers[it].writeBuffer() }
-      val size = read(bufferArray)
-      buffers.forEachIndexed { index, byteBuffer -> byteBuffer.finishWrite(bufferArray[index]) }
-      return size
-    }
-
-    fun SocketChannel.write(buffers: Array<out ByteBuffer>): Long {
-      val bufferArray = Array(buffers.size) { buffers[it].readBuffer() }
-      val size = read(bufferArray)
-      buffers.forEachIndexed { index, byteBuffer -> byteBuffer.finishRead(bufferArray[index]) }
-      return size
-    }
   }
 }

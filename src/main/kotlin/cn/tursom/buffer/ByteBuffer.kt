@@ -20,19 +20,23 @@ interface ByteBuffer {
    */
   fun <T> readBuffer(block: (java.nio.ByteBuffer) -> T): T {
     val buffer = readBuffer()
-    val result = block(buffer)
-    finishRead(buffer)
-    return result
+    return try {
+      block(buffer)
+    } finally {
+      finishRead(buffer)
+    }
   }
 
   /**
    * 使用写 buffer，ByteBuffer 实现类有义务维护指针正常推进
    */
   fun <T> writeBuffer(block: (java.nio.ByteBuffer) -> T): T {
-      val buffer = writeBuffer()
-      val result = block(buffer)
+    val buffer = writeBuffer()
+    return try {
+      block(buffer)
+    } finally {
       finishWrite(buffer)
-      return result
+    }
   }
 
   val readable: Int get() = readBuffer { it.remaining() }
