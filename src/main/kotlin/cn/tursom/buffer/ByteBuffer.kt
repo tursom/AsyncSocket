@@ -46,6 +46,8 @@ interface ByteBuffer : Closeable {
   var writePosition: Int
   var readPosition: Int
 
+  val closed: Boolean get() = false
+
   override fun close() {
   }
 

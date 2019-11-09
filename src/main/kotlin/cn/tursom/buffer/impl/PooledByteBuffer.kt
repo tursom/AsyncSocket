@@ -6,12 +6,14 @@ import cn.tursom.pool.MemoryPool
 class PooledByteBuffer(
     private val buffer: ByteBuffer,
     private val pool: MemoryPool,
-    private val token: Int
+    val token: Int
 ) : ByteBuffer by buffer {
   /**
    * 这个变量保证 buffer 不会被释放多次
    */
   private var open: Boolean = true
+
+  override val closed: Boolean get() = !open
   override fun close() {
     if (open) {
       open = false
