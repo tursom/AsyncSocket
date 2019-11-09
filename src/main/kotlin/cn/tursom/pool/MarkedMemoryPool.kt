@@ -4,6 +4,11 @@ import cn.tursom.buffer.ByteBuffer
 import cn.tursom.buffer.impl.PooledByteBuffer
 import java.io.Closeable
 
+/**
+ * 可以记录与释放分配内存的内存池
+ * 在被垃圾回收时能自动回收内存池的内存
+ * 是一次性用品
+ */
 class MarkedMemoryPool(private val pool: MemoryPool) : MemoryPool by pool, Closeable {
   private val allocatedList = ArrayList<ByteBuffer>(2)
   override fun getMemory(token: Int): ByteBuffer {
@@ -23,5 +28,9 @@ class MarkedMemoryPool(private val pool: MemoryPool) : MemoryPool by pool, Close
       if (it is PooledByteBuffer && !it.closed) allocated.add(it.token)
     }
     return "MarkedMemoryPool(pool=$pool, allocated=$allocated)"
+  }
+
+  protected fun finalize() {
+    close()
   }
 }
