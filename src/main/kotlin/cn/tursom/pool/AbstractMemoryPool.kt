@@ -3,7 +3,7 @@ package cn.tursom.pool
 import cn.tursom.buffer.ByteBuffer
 import cn.tursom.buffer.impl.HeapByteBuffer
 import cn.tursom.buffer.impl.PooledByteBuffer
-import cn.tursom.utils.ArrayBitSet
+import cn.tursom.utils.AtomicBitSet
 
 abstract class AbstractMemoryPool(
     final override val blockSize: Int,
@@ -11,7 +11,7 @@ abstract class AbstractMemoryPool(
     val emptyBuffer: (blockSize: Int) -> ByteBuffer = { HeapByteBuffer(blockSize) },
     private val memoryPool: ByteBuffer
 ) : MemoryPool {
-  private val bitMap = ArrayBitSet(blockCount.toLong())
+  private val bitMap = AtomicBitSet(blockCount.toLong())
   override val allocated: Int get() = bitMap.trueCount.toInt()
 
   private fun unsafeAllocate(): Int {

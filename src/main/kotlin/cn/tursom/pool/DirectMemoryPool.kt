@@ -3,8 +3,6 @@ package cn.tursom.pool
 import cn.tursom.buffer.ByteBuffer
 import cn.tursom.buffer.impl.DirectByteBuffer
 import cn.tursom.buffer.impl.HeapByteBuffer
-import cn.tursom.buffer.impl.PooledByteBuffer
-import cn.tursom.utils.ArrayBitSet
 
 
 class DirectMemoryPool(
