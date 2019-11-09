@@ -1,6 +1,7 @@
 package cn.tursom.buffer
 
 import cn.tursom.utils.forEachIndex
+import java.io.Closeable
 import java.io.OutputStream
 import kotlin.math.min
 
@@ -9,7 +10,7 @@ import kotlin.math.min
  * 支持读写 buffer 分离
  */
 @Suppress("unused")
-interface ByteBuffer {
+interface ByteBuffer : Closeable {
   /**
    * 使用读 buffer，ByteBuffer 实现类有义务维护指针正常推进
    */
@@ -44,6 +45,9 @@ interface ByteBuffer {
   val arrayOffset: Int
   var writePosition: Int
   var readPosition: Int
+
+  override fun close() {
+  }
 
   fun readBuffer(): java.nio.ByteBuffer
   fun finishRead(buffer: java.nio.ByteBuffer)

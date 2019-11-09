@@ -1,6 +1,7 @@
 package cn.tursom.socket
 
 import cn.tursom.buffer.ByteBuffer
+import cn.tursom.pool.MemoryPool
 import cn.tursom.socket.niothread.NioThread
 import java.io.Closeable
 import java.net.SocketException
@@ -8,15 +9,22 @@ import java.nio.channels.SelectionKey
 import java.nio.channels.SocketChannel
 
 interface AsyncSocket : Closeable {
+  val channel: SocketChannel
+  val key: SelectionKey
+  val nioThread: NioThread
+
   suspend fun write(buffer: Array<out ByteBuffer>, timeout: Long = 0L): Long
   suspend fun read(buffer: Array<out ByteBuffer>, timeout: Long = 0L): Long
   suspend fun write(buffer: ByteBuffer, timeout: Long = 0L): Int = write(arrayOf(buffer), timeout).toInt()
   suspend fun read(buffer: ByteBuffer, timeout: Long = 0L): Int = read(arrayOf(buffer), timeout).toInt()
-  override fun close()
 
-  val channel: SocketChannel
-  val key: SelectionKey
-  val nioThread: NioThread
+  /**
+   * 在有数据读取的时候自动由内存池分配内存
+   */
+  @Throws(SocketException::class)
+  suspend fun read(pool: MemoryPool, timeout: Long = 0L): ByteBuffer
+
+  override fun close()
 
   fun waitMode() {
     if (Thread.currentThread() == nioThread.thread) {

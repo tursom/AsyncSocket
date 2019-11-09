@@ -3,9 +3,11 @@ package cn.tursom.socket
 import cn.tursom.buffer.ByteBuffer
 import cn.tursom.buffer.read
 import cn.tursom.buffer.write
+import cn.tursom.pool.MemoryPool
 import cn.tursom.socket.niothread.NioThread
 import cn.tursom.timer.TimerTask
 import cn.tursom.timer.WheelTimer
+import java.net.SocketException
 import java.nio.channels.SelectionKey
 import java.nio.channels.SocketChannel
 import java.util.concurrent.TimeoutException
@@ -50,6 +52,12 @@ class NioSocket(override val key: SelectionKey, override val nioThread: NioThrea
       waitWrite(timeout)
       channel.write(buffer)
     }
+  }
+
+  override suspend fun read(pool: MemoryPool, timeout: Long): ByteBuffer = operate {
+    val buffer = pool.get()
+    if (channel.read(buffer) < 0) throw SocketException()
+    buffer
   }
 
   override fun close() {

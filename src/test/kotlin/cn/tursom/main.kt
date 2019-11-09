@@ -1,9 +1,8 @@
 package cn.tursom
 
-import cn.tursom.buffer.impl.HeapByteBuffer
 import cn.tursom.pool.DirectMemoryPool
-import cn.tursom.socket.AsyncNioClient
-import cn.tursom.socket.server.NioServer
+import cn.tursom.socket.NioClient
+import cn.tursom.socket.server.BuffedNioServer
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
 import java.util.concurrent.TimeoutException
@@ -13,34 +12,29 @@ fun main() {
   // 服务器端口，可任意指定
   val port = 12345
 
-  // 创建一个直接内存池，每个块是1024字节，共有256个快
-  val memoryPool = DirectMemoryPool(1024, 10240)
+  // 创建一个直接内存池，每个块是1024字节，共有10240个块
+  //val memoryPool = DirectMemoryPool(1024, 10240)
   // 创建服务器对象
-  val server = NioServer(port) {
+  val server = BuffedNioServer(port, 1024, 10240) { pool ->
     //log("get new connection")
     // 这里处理业务逻辑，套接字对象被以 this 的方式传进来
     // 从内存池中获取一个内存块
-    memoryPool {
-      // 检查是否获取成功，不成功就创建一个堆缓冲
-      val buffer = it ?: HeapByteBuffer(1024)
-      try {
-        while (true) {
-          buffer.clear()
-          // 从套接字中读数据，五秒之内没有数据就抛出异常
-          if (read(buffer, 10_000) < 0) {
-            return@memoryPool
-          }
-          // 输出读取到的数据
-          //log("server recv from ${channel.remoteAddress}: [${buffer.readableSize}] ${buffer.toString(buffer.readableSize)}")
-          // 原封不动的返回数据
-          val writeSize = write(buffer)
-          //log("server send [$writeSize] bytes")
-        }
-      } catch (e: TimeoutException) {
-        e.printStackTrace()
+    // 检查是否获取成功，不成功就创建一个堆缓冲
+    try {
+      while (true) {
+        // 从套接字中读数据，五秒之内没有数据就抛出异常
+        val buffer = read(pool, 10_000)
+        // 输出读取到的数据
+        //log("server recv from ${channel.remoteAddress}: [${buffer.readableSize}] ${buffer.toString(buffer.readableSize)}")
+        // 原封不动的返回数据
+        val writeSize = write(buffer)
+        //log("server send [$writeSize] bytes")
+        buffer.close()
       }
-      // 代码块结束后，框架会自动释放连接
+    } catch (e: TimeoutException) {
+      Exception(e).printStackTrace()
     }
+    // 代码块结束后，框架会自动释放连接
   }
   server.run()
 
@@ -56,7 +50,7 @@ fun main() {
 
   repeat(connectionCount) {
     GlobalScope.launch {
-      val socket = AsyncNioClient.connect("127.0.0.1", port)
+      val socket = NioClient.connect("127.0.0.1", port)
       clientMemoryPool {
         // 检查是否获取成功，不成功就创建一个堆缓冲
         try {
