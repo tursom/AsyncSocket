@@ -38,7 +38,7 @@ class WheelTimer(
         while (node != null) {
           if (!node.canceled && node.isOutTime(time)) {
             val sNode = node
-            threadPool.execute { sNode.task() }
+            runNow { sNode.task() }
           } else {
             newQueue.offer(node)
           }
@@ -53,16 +53,6 @@ class WheelTimer(
   }
 
   companion object {
-    val threadPool: ExecutorService = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors(),
-      object : ThreadFactory {
-        var threadNumber = 0
-        override fun newThread(r: Runnable): Thread {
-          val thread = Thread(r)
-          thread.isDaemon = true
-          thread.name = "wheelTimerWorker-$threadNumber"
-          return thread
-        }
-      })
     val timer by lazy { WheelTimer(200, 1024) }
     val smoothTimer by lazy { WheelTimer(20, 128) }
   }
