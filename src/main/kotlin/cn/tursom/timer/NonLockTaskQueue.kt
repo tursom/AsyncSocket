@@ -2,7 +2,7 @@ package cn.tursom.timer
 
 import java.util.concurrent.atomic.AtomicReference
 
-class NonLockTaskQueue: TaskQueue {
+class NonLockTaskQueue : TaskQueue {
   private val root = AtomicReference<TaskListNode?>()
 
   private fun add(taskNode: TaskListNode): TaskListNode {
@@ -34,10 +34,10 @@ class NonLockTaskQueue: TaskQueue {
   }
 
   private class TaskListNode(
-      override val timeout: Long,
-      override val task: () -> Unit,
-      override val createTime: Long,
-      @Volatile var next: TaskListNode?
+    override val timeout: Long,
+    override val task: () -> Unit,
+    override val createTime: Long,
+    @Volatile var next: TaskListNode?
   ) : TimerTask {
     @Volatile
     override var canceled: Boolean = false

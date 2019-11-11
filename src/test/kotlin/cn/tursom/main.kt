@@ -5,6 +5,7 @@ import cn.tursom.socket.NioClient
 import cn.tursom.socket.server.BuffedNioServer
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
+import java.net.SocketException
 import java.util.concurrent.TimeoutException
 import java.util.concurrent.atomic.AtomicInteger
 
@@ -33,13 +34,14 @@ fun main() {
       }
     } catch (e: TimeoutException) {
       Exception(e).printStackTrace()
+    } catch (e: SocketException) {
     }
     // 代码块结束后，框架会自动释放连接
   }
   server.run()
 
   val connectionCount = 5000
-  val dataPerConn = 30
+  val dataPerConn = 40
   val testData = "testData".toByteArray()
 
   val remain = AtomicInteger(connectionCount * dataPerConn)

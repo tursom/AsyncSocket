@@ -5,6 +5,7 @@ import cn.tursom.buffer.read
 import cn.tursom.buffer.write
 import cn.tursom.pool.MemoryPool
 import cn.tursom.socket.niothread.NioThread
+import cn.tursom.timer.Timer
 import cn.tursom.timer.TimerTask
 import cn.tursom.timer.WheelTimer
 import java.net.SocketException
@@ -56,6 +57,7 @@ class NioSocket(override val key: SelectionKey, override val nioThread: NioThrea
   }
 
   override suspend fun read(pool: MemoryPool, timeout: Long): ByteBuffer = operate {
+    waitRead(timeout)
     val buffer = pool.get()
     if (channel.read(buffer) < 0) throw SocketException()
     buffer
@@ -153,7 +155,7 @@ class NioSocket(override val key: SelectionKey, override val nioThread: NioThrea
     }
 
     //val timer = StaticWheelTimer.timer
-    val timer = WheelTimer.timer
+    val timer: Timer = WheelTimer.timer
 
     const val emptyBufferCode = 0
     const val emptyBufferLongCode = 0L

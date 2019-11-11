@@ -9,10 +9,10 @@ import kotlin.concurrent.thread
 
 @Suppress("CanBeParameter", "MemberVisibilityCanBePrivate")
 class WheelTimer(
-    val tick: Long = 200,
-    val wheelSize: Int = 512,
-    val name: String = "wheelTimerLooper",
-    val taskQueueFactory: () -> TaskQueue = { NonLockTaskQueue() }
+  val tick: Long = 200,
+  val wheelSize: Int = 512,
+  val name: String = "wheelTimerLooper",
+  val taskQueueFactory: () -> TaskQueue = { NonLockTaskQueue() }
 ) : Timer {
   var closed = false
   val taskQueueArray = Array(wheelSize) { taskQueueFactory() }
@@ -36,7 +36,7 @@ class WheelTimer(
         val time = System.currentTimeMillis()
         var node = taskQueue.take()
         while (node != null) {
-          if (node.isOutTime(time)) {
+          if (!node.canceled && node.isOutTime(time)) {
             val sNode = node
             threadPool.execute { sNode.task() }
           } else {
@@ -54,15 +54,15 @@ class WheelTimer(
 
   companion object {
     val threadPool: ExecutorService = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors(),
-        object : ThreadFactory {
-          var threadNumber = 0
-          override fun newThread(r: Runnable): Thread {
-            val thread = Thread(r)
-            thread.isDaemon = true
-            thread.name = "wheelTimerWorker-$threadNumber"
-            return thread
-          }
-        })
+      object : ThreadFactory {
+        var threadNumber = 0
+        override fun newThread(r: Runnable): Thread {
+          val thread = Thread(r)
+          thread.isDaemon = true
+          thread.name = "wheelTimerWorker-$threadNumber"
+          return thread
+        }
+      })
     val timer by lazy { WheelTimer(200, 1024) }
     val smoothTimer by lazy { WheelTimer(20, 128) }
   }
