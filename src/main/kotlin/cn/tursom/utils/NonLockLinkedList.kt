@@ -5,14 +5,14 @@ import java.util.concurrent.atomic.AtomicReference
 class NonLockLinkedList<T> {
   private val root = AtomicReference<TaskListNode<T>?>()
 
-  fun add(data: T) {
+  infix fun add(data: T) {
     val taskNode = TaskListNode(data, root.get())
     while (!root.compareAndSet(taskNode.next, taskNode)) {
       taskNode.next = root.get()
     }
   }
 
-  operator fun invoke(data: T) = add(data)
+  infix operator fun invoke(data: T) = add(data)
 
   fun take(): T? {
     var node = root.get()

@@ -8,11 +8,11 @@ import cn.tursom.buffer.impl.HeapByteBuffer
 class ThreadUnsafeHeapMemoryPool(
   blockSize: Int = 1024,
   blockCount: Int = 16,
-  emptyBuffer: (blockSize: Int) -> ByteBuffer = { HeapByteBuffer(blockSize) }
+  emptyPoolBuffer: (blockSize: Int) -> ByteBuffer = { HeapByteBuffer(blockSize) }
 ) : ThreadUnsafeAbstractMemoryPool(
   blockSize,
   blockCount,
-  emptyBuffer,
+  emptyPoolBuffer,
   HeapByteBuffer(java.nio.ByteBuffer.allocate(blockSize * blockCount))
 ) {
   override fun toString(): String {

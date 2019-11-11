@@ -44,7 +44,8 @@ fun main() {
   val dataPerConn = 40
   val testData = "testData".toByteArray()
 
-  val remain = AtomicInteger(connectionCount * dataPerConn)
+  //val remain = AtomicInteger(connectionCount * dataPerConn)
+  val remain = AtomicInteger(connectionCount)
 
   val clientMemoryPool = DirectMemoryPool(1024, connectionCount)
 
@@ -53,10 +54,9 @@ fun main() {
   repeat(connectionCount) {
     GlobalScope.launch {
       val socket = NioClient.connect("127.0.0.1", port)
-      clientMemoryPool {
+      clientMemoryPool { buffer ->
         // 检查是否获取成功，不成功就创建一个堆缓冲
         try {
-          val buffer = it!!
           //val buffer = ByteArrayAdvanceByteBuffer(1024)
           repeat(dataPerConn) {
             buffer.clear()
@@ -73,11 +73,11 @@ fun main() {
             val readSize = socket.read(buffer)
             //log(buffer.toString())
             //log("client recv: [$readSize:${buffer.readableSize}] ${buffer.toString(buffer.readableSize)}")
-            remain.decrementAndGet()
           }
         } catch (e: Exception) {
           Exception(e).printStackTrace()
         } finally {
+          remain.decrementAndGet()
           socket.close()
         }
       }

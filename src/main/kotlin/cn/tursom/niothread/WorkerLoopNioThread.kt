@@ -23,8 +23,8 @@ class WorkerLoopNioThread(
       } catch (e: Exception) {
         e.printStackTrace()
       }
-      while (waitQueue.isNotEmpty()) try {
-        waitQueue.take()?.invoke()
+      while (true) try {
+        (waitQueue.take() ?: break).invoke()
       } catch (e: Exception) {
         e.printStackTrace()
       }

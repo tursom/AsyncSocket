@@ -16,7 +16,7 @@ interface MemoryPool {
 
   override fun toString(): String
 
-  suspend operator fun <T> invoke(action: suspend (ByteBuffer?) -> T): T {
+  suspend operator fun <T> invoke(action: suspend (ByteBuffer) -> T): T {
     return getMemory().use { buffer ->
       action(buffer)
     }

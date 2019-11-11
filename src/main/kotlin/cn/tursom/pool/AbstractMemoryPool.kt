@@ -8,7 +8,7 @@ import cn.tursom.utils.AtomicBitSet
 abstract class AbstractMemoryPool(
   val blockSize: Int,
   val blockCount: Int,
-  val emptyBuffer: (blockSize: Int) -> ByteBuffer = { HeapByteBuffer(blockSize) },
+  val emptyPoolBuffer: (blockSize: Int) -> ByteBuffer = { HeapByteBuffer(blockSize) },
   private val memoryPool: ByteBuffer
 ) : MemoryPool {
   private val bitMap = AtomicBitSet(blockCount.toLong())
@@ -50,7 +50,7 @@ abstract class AbstractMemoryPool(
     }
   }
 
-  override fun getMemory(): ByteBuffer = getMemoryOrNull() ?: emptyBuffer(blockSize)
+  override fun getMemory(): ByteBuffer = getMemoryOrNull() ?: emptyPoolBuffer(blockSize)
 
   override fun get(blockCount: Int): Array<ByteBuffer> = synchronized(this) {
     Array(blockCount) {
@@ -58,7 +58,7 @@ abstract class AbstractMemoryPool(
       if (token in 0 until blockCount) {
         unsafeGetMemory(token)
       } else {
-        emptyBuffer(blockSize)
+        emptyPoolBuffer(blockSize)
       }
     }
   }
