@@ -1,21 +1,20 @@
 package cn.tursom.niothread
 
 import cn.tursom.socket.niothread.NioThread
+import cn.tursom.utils.NonLockLinkedList
 import java.nio.channels.Selector
-import java.util.concurrent.Callable
-import java.util.concurrent.LinkedBlockingDeque
 
 @Suppress("MemberVisibilityCanBePrivate", "CanBeParameter")
 class WorkerLoopNioThread(
-    val threadName: String = "nioLoopThread",
-    override val selector: Selector = Selector.open(),
-    override val isDaemon: Boolean = false,
-    override val workLoop: (thread: NioThread) -> Unit
+  val threadName: String = "nioLoopThread",
+  override val selector: Selector = Selector.open(),
+  override val isDaemon: Boolean = false,
+  override val workLoop: (thread: NioThread) -> Unit
 ) : NioThread {
   override var closed: Boolean = false
 
-  val waitQueue = LinkedBlockingDeque<Runnable>()
-  val taskQueue = LinkedBlockingDeque<Future<Any?>>()
+  val waitQueue = NonLockLinkedList<() -> Unit>()
+  //val taskQueue = LinkedBlockingDeque<Future<Any?>>()
 
   override val thread = Thread {
     while (!closed) {
@@ -24,19 +23,8 @@ class WorkerLoopNioThread(
       } catch (e: Exception) {
         e.printStackTrace()
       }
-      //System.err.println("$threadName worker loop finish once")
       while (waitQueue.isNotEmpty()) try {
-        waitQueue.poll().run()
-      } catch (e: Exception) {
-        e.printStackTrace()
-      }
-      while (taskQueue.isNotEmpty()) try {
-        val task = taskQueue.poll()
-        try {
-          task.resume(task.task.call())
-        } catch (e: Throwable) {
-          task.resumeWithException(e)
-        }
+        waitQueue.take()?.invoke()
       } catch (e: Exception) {
         e.printStackTrace()
       }
@@ -49,14 +37,19 @@ class WorkerLoopNioThread(
     thread.start()
   }
 
-  override fun execute(command: Runnable) {
+  override fun execute(command: () -> Unit) {
     waitQueue.add(command)
   }
 
-  override fun <T> submit(task: Callable<T>): NioThreadTaskFuture<T> {
-    val f = Future(task)
-    @Suppress("UNCHECKED_CAST")
-    taskQueue.add(f as Future<Any?>)
+  override fun <T> submit(task: () -> T): NioThreadTaskFuture<T> {
+    val f = Future<T>()
+    waitQueue {
+      try {
+        f.resume(task())
+      } catch (e: Throwable) {
+        f.resumeWithException(e)
+      }
+    }
     return f
   }
 
@@ -70,21 +63,22 @@ class WorkerLoopNioThread(
     }
   }
 
-  class Future<T>(val task: Callable<T>) : NioThreadTaskFuture<T> {
+  class Future<T> : NioThreadTaskFuture<T> {
     private val lock = Object()
     private var exception: Throwable? = null
     private var result: Pair<T, Boolean>? = null
 
+    @Throws(Throwable::class)
     override fun get(): T {
       val result = this.result
       return when {
-        exception != null -> throw RuntimeException(exception)
+        exception != null -> throw exception as Throwable
         result != null -> result.first
         else -> synchronized(lock) {
           lock.wait()
           val exception = this.exception
           if (exception != null) {
-            throw RuntimeException(exception)
+            throw exception
           } else {
             this.result!!.first
           }

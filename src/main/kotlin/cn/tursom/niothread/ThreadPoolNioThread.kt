@@ -8,22 +8,22 @@ import java.util.concurrent.*
 
 @Suppress("MemberVisibilityCanBePrivate")
 class ThreadPoolNioThread(
-    val threadName: String = "",
-    override val selector: Selector = Selector.open(),
-    override val isDaemon: Boolean = false,
-    override val workLoop: (thread: NioThread) -> Unit
+  val threadName: String = "",
+  override val selector: Selector = Selector.open(),
+  override val isDaemon: Boolean = false,
+  override val workLoop: (thread: NioThread) -> Unit
 ) : NioThread {
   override lateinit var thread: Thread
   val threadPool: ExecutorService = ThreadPoolExecutor(1, 1,
-      0L, TimeUnit.MILLISECONDS,
-      LinkedBlockingQueue<Runnable>(),
-      ThreadFactory {
-        val thread = Thread(it)
-        this.thread = thread
-        thread.isDaemon = isDaemon
-        thread.name = threadName
-        thread
-      })
+    0L, TimeUnit.MILLISECONDS,
+    LinkedBlockingQueue<Runnable>(),
+    ThreadFactory {
+      val thread = Thread(it)
+      this.thread = thread
+      thread.isDaemon = isDaemon
+      thread.name = threadName
+      thread
+    })
   override var closed: Boolean = false
 
   init {
@@ -50,9 +50,9 @@ class ThreadPoolNioThread(
     }
   }
 
-  override fun execute(command: Runnable) = threadPool.execute(command)
+  override fun execute(command: () -> Unit) = threadPool.execute(command)
   override fun <T> call(task: Callable<T>): T = threadPool.submit(task).get()
-  override fun <T> submit(task: Callable<T>): NioThreadTaskFuture<T> = ThreadPoolTaskFuture(threadPool.submit(task))
+  override fun <T> submit(task: () -> T): NioThreadTaskFuture<T> = ThreadPoolTaskFuture(threadPool.submit(task))
 
   override fun close() {
     closed = true
