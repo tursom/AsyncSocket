@@ -92,6 +92,11 @@ class NioLoopServer(
     }
   }
 
+
+  protected fun finalize() {
+    close()
+  }
+
   companion object {
     private const val TIMEOUT = 1000L
   }

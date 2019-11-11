@@ -8,20 +8,30 @@ import java.util.concurrent.atomic.AtomicBoolean
  * 在被垃圾回收时能保证释放占用的内存池内存
  */
 class PooledByteBuffer(
-    private val buffer: ByteBuffer,
-    private val pool: MemoryPool,
-    val token: Int
+  private val buffer: ByteBuffer,
+  private val pool: MemoryPool,
+  val token: Int
 ) : ByteBuffer by buffer {
   /**
    * 这个变量保证 buffer 不会被释放多次
    */
   private var open = AtomicBoolean(true)
+  private var resized = false
 
-  override val closed: Boolean get() = !open.get()
+  override val closed: Boolean get() = !open.get() || resized
   override fun close() {
     if (open.compareAndSet(true, false)) {
       pool.free(token)
     }
+  }
+
+  override fun resize(newSize: Int): Boolean {
+    val successful = buffer.resize(newSize)
+    if (successful) {
+      resized = true
+      close()
+    }
+    return successful
   }
 
   override fun toString(): String {

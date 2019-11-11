@@ -6,35 +6,29 @@ import cn.tursom.buffer.ByteBuffer
  * 内存池
  */
 interface MemoryPool {
-  val blockSize: Int
-  val blockCount: Int
-  val allocated: Int
+  val staticSize: Boolean get() = true
 
-  fun allocate(): Int
+  //  fun allocate(): Int
   fun free(token: Int)
-  fun getMemory(token: Int): ByteBuffer
+
+  fun getMemory(): ByteBuffer
+  fun getMemoryOrNull(): ByteBuffer?
 
   override fun toString(): String
 
   suspend operator fun <T> invoke(action: suspend (ByteBuffer?) -> T): T {
-    val token = allocate()
-    return try {
-      action(getMemory(token))
-    } finally {
-      free(token)
+    return getMemory().use { buffer ->
+      action(buffer)
     }
   }
 
-  fun get() = getMemory(allocate())
+  fun get() = getMemory()
 
   operator fun get(blockCount: Int): Array<ByteBuffer> = Array(blockCount) { get() }
 }
 
 inline fun <T> MemoryPool.memory(action: (ByteBuffer?) -> T): T {
-  val token = allocate()
-  return try {
-    action(getMemory(token))
-  } finally {
-    free(token)
+  return getMemory().use { buffer ->
+    action(buffer)
   }
 }

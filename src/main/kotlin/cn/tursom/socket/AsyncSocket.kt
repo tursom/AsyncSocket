@@ -9,6 +9,7 @@ import java.nio.channels.SelectionKey
 import java.nio.channels.SocketChannel
 
 interface AsyncSocket : Closeable {
+  val open: Boolean
   val channel: SocketChannel
   val key: SelectionKey
   val nioThread: NioThread

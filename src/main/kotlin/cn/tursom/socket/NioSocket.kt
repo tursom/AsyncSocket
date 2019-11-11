@@ -21,6 +21,7 @@ import kotlin.coroutines.suspendCoroutine
  */
 class NioSocket(override val key: SelectionKey, override val nioThread: NioThread) : AsyncSocket {
   override val channel: SocketChannel = key.channel() as SocketChannel
+  override val open: Boolean get() = channel.isOpen && key.isValid
 
   override suspend fun read(buffer: ByteBuffer, timeout: Long): Int {
     if (buffer.writeable == 0) return emptyBufferCode
@@ -61,11 +62,13 @@ class NioSocket(override val key: SelectionKey, override val nioThread: NioThrea
   }
 
   override fun close() {
-    nioThread.execute {
-      channel.close()
-      key.cancel()
+    if (channel.isOpen || key.isValid) {
+      nioThread.execute {
+        channel.close()
+        key.cancel()
+      }
+      nioThread.wakeup()
     }
-    nioThread.wakeup()
   }
 
   private inline fun <T> operate(action: () -> T): T {
@@ -103,6 +106,10 @@ class NioSocket(override val key: SelectionKey, override val nioThread: NioThrea
 
   data class Context(val cont: Continuation<Int>, val timeoutTask: TimerTask? = null)
   data class ConnectContext(val cont: Continuation<SelectionKey>, val timeoutTask: TimerTask? = null)
+
+  protected fun finalize() {
+    close()
+  }
 
   /**
    * 伴生对象

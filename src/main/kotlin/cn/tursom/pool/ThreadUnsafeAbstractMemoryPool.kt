@@ -3,15 +3,15 @@ package cn.tursom.pool
 import cn.tursom.buffer.ByteBuffer
 import cn.tursom.buffer.impl.HeapByteBuffer
 import cn.tursom.buffer.impl.PooledByteBuffer
-import cn.tursom.utils.AtomicBitSet
+import cn.tursom.utils.ArrayBitSet
 
-abstract class AbstractMemoryPool(
+abstract class ThreadUnsafeAbstractMemoryPool(
   val blockSize: Int,
   val blockCount: Int,
   val emptyBuffer: (blockSize: Int) -> ByteBuffer = { HeapByteBuffer(blockSize) },
   private val memoryPool: ByteBuffer
 ) : MemoryPool {
-  private val bitMap = AtomicBitSet(blockCount.toLong())
+  private val bitMap = ArrayBitSet(blockCount.toLong())
   val allocated: Int get() = bitMap.trueCount.toInt()
 
   private fun unsafeAllocate(): Int {
@@ -35,16 +35,16 @@ abstract class AbstractMemoryPool(
   /**
    * @return token
    */
-  private fun allocate(): Int = synchronized(this) { unsafeAllocate() }
+  private fun allocate(): Int = unsafeAllocate()
 
   override fun free(token: Int) {
-    if (token in 0 until blockCount) synchronized(this) { unsafeFree(token) }
+    if (token in 0 until blockCount) unsafeFree(token)
   }
 
   override fun getMemoryOrNull(): ByteBuffer? {
     val token = allocate()
     return if (token in 0 until blockCount) {
-      synchronized(this) { return unsafeGetMemory(token) }
+      unsafeGetMemory(token)
     } else {
       null
     }
