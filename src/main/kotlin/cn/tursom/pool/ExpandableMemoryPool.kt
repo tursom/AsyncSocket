@@ -45,7 +45,7 @@ class ExpandableMemoryPool(private val poolFactory: () -> MemoryPool) : MemoryPo
       newPool.getMemory()
     } else {
       synchronized(poolLock) {
-        (poolLock as Object).wait()
+        (poolLock as Object).wait(500)
       }
       poolList.last().getMemory()
     }
