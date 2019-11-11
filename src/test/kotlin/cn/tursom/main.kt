@@ -15,7 +15,7 @@ fun main() {
   // 创建一个直接内存池，每个块是1024字节，共有10240个块
   //val memoryPool = DirectMemoryPool(1024, 10240)
   // 创建服务器对象
-  val server = BuffedNioServer(port, 1024, 10240) { pool ->
+  val server = BuffedNioServer(port, 4096, 128) { pool ->
     //log("get new connection")
     // 这里处理业务逻辑，套接字对象被以 this 的方式传进来
     // 从内存池中获取一个内存块

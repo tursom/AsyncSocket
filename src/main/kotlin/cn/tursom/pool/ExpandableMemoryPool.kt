@@ -3,6 +3,10 @@ package cn.tursom.pool
 import cn.tursom.buffer.ByteBuffer
 import java.util.concurrent.atomic.AtomicBoolean
 
+/**
+ * 可自动申请新内存空间的内存池
+ * 线程安全
+ */
 class ExpandableMemoryPool(private val poolFactory: () -> MemoryPool) : MemoryPool {
   private val poolList = ArrayList<MemoryPool>(1)
   private var usingPool = 0

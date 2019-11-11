@@ -29,7 +29,7 @@ class BuffedNioServer(
     handler: suspend NioSocket.(buffer: MarkedMemoryPool) -> Unit
   ) : this(
     port,
-    ThreadLocalMemoryPool { ExpandableMemoryPool { ThreadUnsafeDirectMemoryPool(blockSize, blockCount) } },
+    ExpandableMemoryPool { ThreadLocalMemoryPool { ThreadUnsafeDirectMemoryPool(blockSize, blockCount) } },
     backlog,
     coroutineScope,
     handler
