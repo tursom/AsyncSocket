@@ -2,6 +2,7 @@ package cn.tursom.niothread
 
 import cn.tursom.socket.niothread.NioThread
 import cn.tursom.utils.NonLockLinkedList
+import java.nio.channels.SelectionKey
 import java.nio.channels.Selector
 
 @Suppress("MemberVisibilityCanBePrivate", "CanBeParameter")
@@ -9,7 +10,8 @@ class WorkerLoopNioThread(
   val threadName: String = "nioLoopThread",
   override val selector: Selector = Selector.open(),
   override val isDaemon: Boolean = false,
-  override val workLoop: (thread: NioThread) -> Unit
+  override val timeout: Long = 3000,
+  override val workLoop: (thread: NioThread, key: SelectionKey) -> Unit
 ) : NioThread {
   override var closed: Boolean = false
 
@@ -19,7 +21,16 @@ class WorkerLoopNioThread(
   override val thread = Thread {
     while (!closed) {
       try {
-        workLoop(this)
+        if (selector.isOpen) {
+          if (selector.select(timeout) != 0) {
+            val keyIter = selector.selectedKeys().iterator()
+            while (keyIter.hasNext()) {
+              val key = keyIter.next()
+              keyIter.remove()
+              workLoop(this, key)
+            }
+          }
+        }
       } catch (e: Exception) {
         e.printStackTrace()
       }

@@ -13,62 +13,38 @@ import kotlin.coroutines.suspendCoroutine
 
 @Suppress("MemberVisibilityCanBePrivate")
 object NioClient {
-    private const val TIMEOUT = 1000L
-    private val protocol = NioSocket.nioSocketProtocol
-    @JvmStatic
-    private val nioThread = WorkerLoopNioThread("nioClient", isDaemon = true) { nioThread ->
-        val selector = nioThread.selector
-        if (selector.select(TIMEOUT) != 0) {
-            val keyIter = selector.selectedKeys().iterator()
-            while (keyIter.hasNext()) {
-                val key = keyIter.next()
-                keyIter.remove()
-                try {
-                    when {
-                        key.isReadable -> {
-                            protocol.handleRead(key, nioThread)
-                        }
-                        key.isWritable -> {
-                            protocol.handleWrite(key, nioThread)
-                        }
-                    }
-                } catch (e: Throwable) {
-                    try {
-                        protocol.exceptionCause(key, nioThread, e)
-                    } catch (e1: Throwable) {
-                        e.printStackTrace()
-                        e1.printStackTrace()
-                        key.cancel()
-                        key.channel().close()
-                    }
-                }
-            }
-        }
-    }
+  private const val TIMEOUT = 1000L
+  private val protocol = NioSocket.nioSocketProtocol
+  @JvmStatic
+  private val nioThread = WorkerLoopNioThread(
+    "nioClient",
+    isDaemon = true,
+    workLoop = WorkerLoopHandler(protocol)::handle
+  )
 
-    suspend fun connect(host: String, port: Int, timeout: Long = 0): NioSocket {
-        val key: SelectionKey = suspendCoroutine { cont ->
-            val channel = getConnection(host, port)
-            val timeoutTask = if (timeout > 0) NioSocket.timer.exec(timeout) {
-                channel.close()
-                cont.resumeWithException(TimeoutException())
-            } else {
-                null
-            }
-            nioThread.register(channel, 0) { key ->
-                timeoutTask?.cancel()
-                cont.resume(key)
-            }
-        }
-        return NioSocket(key, nioThread)
+  suspend fun connect(host: String, port: Int, timeout: Long = 0): NioSocket {
+    val key: SelectionKey = suspendCoroutine { cont ->
+      val channel = getConnection(host, port)
+      val timeoutTask = if (timeout > 0) NioSocket.timer.exec(timeout) {
+        channel.close()
+        cont.resumeWithException(TimeoutException())
+      } else {
+        null
+      }
+      nioThread.register(channel, 0) { key ->
+        timeoutTask?.cancel()
+        cont.resume(key)
+      }
     }
+    return NioSocket(key, nioThread)
+  }
 
-    private fun getConnection(host: String, port: Int): SelectableChannel {
-        val channel = SocketChannel.open()!!
-        if (!channel.connect(InetSocketAddress(host, port))) {
-            throw SocketException("connection failed")
-        }
-        channel.configureBlocking(false)
-        return channel
+  private fun getConnection(host: String, port: Int): SelectableChannel {
+    val channel = SocketChannel.open()!!
+    if (!channel.connect(InetSocketAddress(host, port))) {
+      throw SocketException("connection failed")
     }
+    channel.configureBlocking(false)
+    return channel
+  }
 }

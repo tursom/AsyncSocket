@@ -14,7 +14,8 @@ import java.util.concurrent.Callable
 interface NioThread : Closeable {
   val selector: Selector
   val closed: Boolean
-  val workLoop: (thread: NioThread) -> Unit
+  val timeout: Long
+  val workLoop: (thread: NioThread, key: SelectionKey) -> Unit
   val thread: Thread
   val isDaemon: Boolean
 

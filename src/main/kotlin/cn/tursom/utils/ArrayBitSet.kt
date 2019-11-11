@@ -25,9 +25,7 @@ class ArrayBitSet(beginSize: Long = 256, val defaultState: Boolean = false) : Se
 
   init {
     val default = if (defaultState) -1L else 0L
-    for (i in bitSet.indices) {
-      bitSet[i] = default
-    }
+    bitSet.fill(default)
   }
 
   operator fun get(index: Long): Boolean {
