@@ -1,7 +1,8 @@
 package cn.tursom.socket.server
 
 import cn.tursom.pool.*
-import cn.tursom.socket.NioSocket
+import cn.tursom.socket.BufferedAsyncSocket
+import cn.tursom.socket.BufferedNioSocket
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.GlobalScope
 
@@ -14,10 +15,10 @@ class BuffedNioServer(
   memoryPool: MemoryPool,
   backlog: Int = 50,
   coroutineScope: CoroutineScope = GlobalScope,
-  handler: suspend NioSocket.(memoryPool: MarkedMemoryPool) -> Unit
+  handler: suspend BufferedAsyncSocket.() -> Unit
 ) : NioServer(port, backlog, coroutineScope, {
   MarkedMemoryPool(memoryPool).use { marked ->
-    handler(marked)
+    BufferedNioSocket(this, marked).handler()
   }
 }) {
   constructor(
@@ -26,10 +27,10 @@ class BuffedNioServer(
     blockCount: Int = 128,
     backlog: Int = 50,
     coroutineScope: CoroutineScope = GlobalScope,
-    handler: suspend NioSocket.(buffer: MarkedMemoryPool) -> Unit
+    handler: suspend BufferedAsyncSocket.() -> Unit
   ) : this(
     port,
-    ThreadLocalMemoryPool { ExpandableMemoryPool { ThreadUnsafeDirectMemoryPool(blockSize, blockCount) } },
+    ThreadLocalMemoryPool { ExpandableMemoryPool { DirectMemoryPool(blockSize, blockCount) } },
     backlog,
     coroutineScope,
     handler

@@ -1,5 +1,6 @@
 package cn.tursom.socket.server
 
+import cn.tursom.socket.AsyncSocket
 import cn.tursom.socket.NioSocket
 import cn.tursom.socket.NioProtocol
 import cn.tursom.socket.niothread.NioThread
@@ -13,10 +14,10 @@ import java.nio.channels.SelectionKey
  * 协程运行的线程是独立于管理线程的
  */
 open class NioServer(
-    override val port: Int,
-    backlog: Int = 50,
-    coroutineScope: CoroutineScope = GlobalScope,
-    val handler: suspend NioSocket.() -> Unit
+  override val port: Int,
+  backlog: Int = 50,
+  coroutineScope: CoroutineScope = GlobalScope,
+  val handler: suspend AsyncSocket.() -> Unit
 ) : SocketServer by NioLoopServer(port, object : NioProtocol by NioSocket.nioSocketProtocol {
   override fun handleConnect(key: SelectionKey, nioThread: NioThread) {
     coroutineScope.launch {

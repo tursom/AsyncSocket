@@ -59,6 +59,9 @@ interface ByteBuffer : Closeable {
   fun reset()
   fun slice(offset: Int, size: Int): ByteBuffer
 
+  /**
+   * @return 底层 nio buffer 是否已更新
+   */
   fun resize(newSize: Int): Boolean
 
   val writeOffset: Int get() = arrayOffset + writePosition

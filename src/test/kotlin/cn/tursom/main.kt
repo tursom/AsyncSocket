@@ -16,7 +16,7 @@ fun main() {
   // 创建一个直接内存池，每个块是1024字节，共有10240个块
   //val memoryPool = DirectMemoryPool(1024, 10240)
   // 创建服务器对象
-  val server = BuffedNioServer(port, 4096, 128) { pool ->
+  val server = BuffedNioServer(port, 4096, 128) {
     //log("get new connection")
     // 这里处理业务逻辑，套接字对象被以 this 的方式传进来
     // 从内存池中获取一个内存块
@@ -24,7 +24,7 @@ fun main() {
     try {
       while (true) {
         // 从套接字中读数据，五秒之内没有数据就抛出异常
-        val buffer = read(pool, 10_000)
+        val buffer = read(10_000)
         // 输出读取到的数据
         //log("server recv from ${channel.remoteAddress}: [${buffer.readableSize}] ${buffer.toString(buffer.readableSize)}")
         // 原封不动的返回数据

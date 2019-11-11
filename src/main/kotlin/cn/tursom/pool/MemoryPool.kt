@@ -26,9 +26,3 @@ interface MemoryPool {
 
   operator fun get(blockCount: Int): Array<ByteBuffer> = Array(blockCount) { get() }
 }
-
-inline fun <T> MemoryPool.memory(action: (ByteBuffer?) -> T): T {
-  return getMemory().use { buffer ->
-    action(buffer)
-  }
-}

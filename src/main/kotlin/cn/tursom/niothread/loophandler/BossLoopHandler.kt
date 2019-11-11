@@ -1,5 +1,6 @@
-package cn.tursom.socket
+package cn.tursom.niothread.loophandler
 
+import cn.tursom.socket.NioProtocol
 import cn.tursom.socket.niothread.NioThread
 import java.nio.channels.SelectionKey
 import java.nio.channels.ServerSocketChannel
