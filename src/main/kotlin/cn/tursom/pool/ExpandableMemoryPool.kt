@@ -1,6 +1,7 @@
 package cn.tursom.pool
 
 import cn.tursom.buffer.ByteBuffer
+import java.util.concurrent.atomic.AtomicBoolean
 
 class ExpandableMemoryPool(private val poolFactory: () -> MemoryPool) : MemoryPool {
   private val poolList = ArrayList<MemoryPool>(1)
@@ -21,14 +22,32 @@ class ExpandableMemoryPool(private val poolFactory: () -> MemoryPool) : MemoryPo
       if (buffer != null) usingPool = it
       return buffer ?: return@repeat
     }
-    val newPool = poolFactory()
-    poolList.add(newPool)
-    return newPool.getMemory()
+    return newPool()
   }
 
   override fun getMemoryOrNull(): ByteBuffer? = getMemory()
 
   override fun toString(): String {
     return "ExpandableMemoryPool(poolList=$poolList, usingPool=$usingPool)"
+  }
+
+  private val poolLock = AtomicBoolean(false)
+  @Suppress("PLATFORM_CLASS_MAPPED_TO_KOTLIN")
+  private fun newPool(): ByteBuffer {
+    return if (poolLock.compareAndSet(false, true)) {
+      val newPool = poolFactory()
+      poolList.add(newPool)
+      poolLock.set(false)
+      usingPool = poolList.size - 1
+      synchronized(poolLock) {
+        (poolLock as Object).notifyAll()
+      }
+      newPool.getMemory()
+    } else {
+      synchronized(poolLock) {
+        (poolLock as Object).wait()
+      }
+      poolList.last().getMemory()
+    }
   }
 }
