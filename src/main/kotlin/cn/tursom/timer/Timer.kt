@@ -27,7 +27,7 @@ interface Timer {
         Runtime.getRuntime().availableProcessors(),
         Runtime.getRuntime().availableProcessors(),
         0L, TimeUnit.MILLISECONDS,
-        LinkedBlockingDeque(),
+        LinkedTransferQueue(),
         object : ThreadFactory {
           var threadNumber = 0
           override fun newThread(r: Runnable): Thread {
