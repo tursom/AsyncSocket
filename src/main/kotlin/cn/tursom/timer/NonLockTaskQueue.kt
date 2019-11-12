@@ -17,7 +17,7 @@ class NonLockTaskQueue : TaskQueue {
   }
 
   override fun offer(task: TimerTask): TimerTask {
-    if (task.canceled) return task
+    if (task.canceled || task.isOutTime) return task
     return if (task is TaskListNode) {
       add(task)
     } else {
@@ -34,14 +34,18 @@ class NonLockTaskQueue : TaskQueue {
   }
 
   private class TaskListNode(
-    override val timeout: Long,
-    override val task: () -> Unit,
-    override val createTime: Long,
-    @Volatile var next: TaskListNode?
+      override val timeout: Long,
+      override val task: () -> Unit,
+      override val createTime: Long,
+      @Volatile var next: TaskListNode?
   ) : TimerTask {
     @Volatile
     override var canceled: Boolean = false
     override val outTime: Long = super.outTime
+
+    override fun invoke() {
+      task()
+    }
 
     override fun cancel() {
       canceled = true

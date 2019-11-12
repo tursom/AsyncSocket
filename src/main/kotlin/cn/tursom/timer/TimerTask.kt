@@ -1,6 +1,6 @@
 package cn.tursom.timer
 
-interface TimerTask {
+interface TimerTask : () -> Unit {
   val canceled: Boolean
   val createTime: Long
   val timeout: Long

@@ -7,10 +7,10 @@ import kotlin.concurrent.thread
 
 @Suppress("CanBeParameter", "MemberVisibilityCanBePrivate")
 class WheelTimer(
-  val tick: Long = 200,
-  val wheelSize: Int = 512,
-  val name: String = "wheelTimerLooper",
-  val taskQueueFactory: () -> TaskQueue = { NonLockTaskQueue() }
+    val tick: Long = 200,
+    val wheelSize: Int = 512,
+    val name: String = "wheelTimerLooper",
+    val taskQueueFactory: () -> TaskQueue = { NonLockTaskQueue() }
 ) : Timer {
   var closed = false
   val taskQueueArray = AtomicReferenceArray(Array(wheelSize) { taskQueueFactory() })
@@ -28,20 +28,23 @@ class WheelTimer(
       while (!closed) {
         position %= wheelSize
 
+        val outTimeQueue = taskQueueFactory()
         val newQueue = taskQueueFactory()
         val taskQueue = taskQueueArray.getAndSet(position++, newQueue)
 
-        //val time = System.currentTimeMillis()
-        var node = taskQueue.take()
-        while (node != null) {
-          if (!node.canceled && node.isOutTime) {
-            val sNode = node
-            runNow { sNode.task() }
+        while (true) {
+          val node = taskQueue.take() ?: break
+          if (node.canceled) {
+            continue
+          } else if (node.isOutTime) {
+            outTimeQueue.offer(node)
+            //runNow(node)
           } else {
             newQueue.offer(node)
           }
-          node = taskQueue.take()
         }
+
+        runNow(outTimeQueue)
 
         val nextSleep = startTime + tick * position - System.currentTimeMillis()
         if (nextSleep > 0) sleep(tick)

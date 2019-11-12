@@ -11,7 +11,7 @@ import java.util.concurrent.atomic.AtomicInteger
 
 fun main() {
   // 服务器端口，可任意指定
-  val port = 12345
+  val port = 12346
 
   // 创建一个直接内存池，每个块是1024字节，共有10240个块
   //val memoryPool = DirectMemoryPool(1024, 10240)

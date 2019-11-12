@@ -1,6 +1,5 @@
 package cn.tursom.timer
 
-import cn.tursom.utils.NonLockLinkedList
 import java.util.concurrent.*
 
 interface Timer {
@@ -10,12 +9,25 @@ interface Timer {
     threadPool.execute { task() }
   }
 
+  fun runNow(taskList: TaskQueue) {
+    threadPool.execute {
+      while (true) {
+        val task = taskList.take() ?: return@execute
+        try {
+          task()
+        } catch (e: Throwable) {
+          e.printStackTrace()
+        }
+      }
+    }
+  }
+
   companion object {
-    val threadPool: ExecutorService = ThreadPoolExecutor(
+    private val threadPool: ExecutorService = ThreadPoolExecutor(
         Runtime.getRuntime().availableProcessors(),
         Runtime.getRuntime().availableProcessors(),
         0L, TimeUnit.MILLISECONDS,
-        NonLockLinkedList(),
+        LinkedBlockingDeque(),
         object : ThreadFactory {
           var threadNumber = 0
           override fun newThread(r: Runnable): Thread {

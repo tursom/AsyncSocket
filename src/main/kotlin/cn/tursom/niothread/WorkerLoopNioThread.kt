@@ -49,7 +49,7 @@ class WorkerLoopNioThread(
   }
 
   override fun execute(command: () -> Unit) {
-    waitQueue.put(command)
+    waitQueue.add(command)
   }
 
   override fun <T> submit(task: () -> T): NioThreadTaskFuture<T> {

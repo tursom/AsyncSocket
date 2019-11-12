@@ -52,6 +52,10 @@ class SynchronizedTaskQueue : TaskQueue {
 
     override val outTime = createTime + timeout
 
+    override fun invoke() {
+      task()
+    }
+
     override fun cancel() {
       synchronized(root) {
         canceled = true
