@@ -9,9 +9,5 @@ interface TimerTask {
   val isOutTime get() = System.currentTimeMillis() > outTime
 
   fun isOutTime(time: Long): Boolean = time > outTime
-  fun run() {
-    if (!canceled) task()
-  }
-
   fun cancel()
 }

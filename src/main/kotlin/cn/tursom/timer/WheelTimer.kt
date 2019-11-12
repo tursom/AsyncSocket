@@ -1,9 +1,7 @@
 package cn.tursom.timer
 
 import java.lang.Thread.sleep
-import java.util.concurrent.ExecutorService
-import java.util.concurrent.Executors
-import java.util.concurrent.ThreadFactory
+import java.util.concurrent.atomic.AtomicReferenceArray
 import kotlin.concurrent.thread
 
 
@@ -15,11 +13,12 @@ class WheelTimer(
   val taskQueueFactory: () -> TaskQueue = { NonLockTaskQueue() }
 ) : Timer {
   var closed = false
-  val taskQueueArray = Array(wheelSize) { taskQueueFactory() }
+  val taskQueueArray = AtomicReferenceArray(Array(wheelSize) { taskQueueFactory() })
   private var position = 0
 
   override fun exec(timeout: Long, task: () -> Unit): TimerTask {
-    val index = ((timeout / tick + position + if (timeout % tick == 0L) 0 else 1) % wheelSize).toInt()
+    //val index = ((timeout / tick + position + if (timeout % tick == 0L) 0 else 1) % wheelSize).toInt()
+    val index = ((timeout / tick + position) % wheelSize).toInt()
     return taskQueueArray[index].offer(task, timeout)
   }
 
@@ -30,13 +29,12 @@ class WheelTimer(
         position %= wheelSize
 
         val newQueue = taskQueueFactory()
-        val taskQueue = taskQueueArray[position]
-        taskQueueArray[position] = newQueue
+        val taskQueue = taskQueueArray.getAndSet(position++, newQueue)
 
-        val time = System.currentTimeMillis()
+        //val time = System.currentTimeMillis()
         var node = taskQueue.take()
         while (node != null) {
-          if (!node.canceled && node.isOutTime(time)) {
+          if (!node.canceled && node.isOutTime) {
             val sNode = node
             runNow { sNode.task() }
           } else {
@@ -45,7 +43,6 @@ class WheelTimer(
           node = taskQueue.take()
         }
 
-        position++
         val nextSleep = startTime + tick * position - System.currentTimeMillis()
         if (nextSleep > 0) sleep(tick)
       }

@@ -40,8 +40,8 @@ fun main() {
   }
   server.run()
 
-  val connectionCount = 5000
-  val dataPerConn = 40
+  val connectionCount = 1000
+  val dataPerConn = 1000
   val testData = "testData".toByteArray()
 
   //val remain = AtomicInteger(connectionCount * dataPerConn)
