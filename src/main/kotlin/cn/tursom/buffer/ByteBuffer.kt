@@ -1,5 +1,7 @@
 package cn.tursom.buffer
 
+import cn.tursom.buffer.impl.DirectByteBuffer
+import cn.tursom.buffer.impl.HeapByteBuffer
 import cn.tursom.utils.forEachIndex
 import java.io.Closeable
 import java.io.OutputStream
@@ -36,8 +38,8 @@ interface ByteBuffer : Closeable {
     }
   }
 
-  val readable: Int get() = readBuffer(Buffer::remaining)
-  val writeable: Int get() = writeBuffer(Buffer::remaining)
+  val readable: Int get() = read(Buffer::remaining)
+  val writeable: Int get() = write(Buffer::remaining)
 
   val hasArray: Boolean
   val array: ByteArray
@@ -48,6 +50,7 @@ interface ByteBuffer : Closeable {
   var readPosition: Int
 
   val closed: Boolean get() = false
+  val resized: Boolean
 
   override fun close() {
   }
@@ -73,15 +76,15 @@ interface ByteBuffer : Closeable {
     writePosition = 0
   }
 
-  fun get(): Byte = readBuffer { it.get() }
-  fun getChar(): Char = readBuffer { it.char }
-  fun getShort(): Short = readBuffer { it.short }
-  fun getInt(): Int = readBuffer { it.int }
-  fun getLong(): Long = readBuffer { it.long }
-  fun getFloat(): Float = readBuffer { it.float }
-  fun getDouble(): Double = readBuffer { it.double }
+  fun get(): Byte = read { it.get() }
+  fun getChar(): Char = read { it.char }
+  fun getShort(): Short = read { it.short }
+  fun getInt(): Int = read { it.int }
+  fun getLong(): Long = read { it.long }
+  fun getFloat(): Float = read { it.float }
+  fun getDouble(): Double = read { it.double }
 
-  fun getBytes(size: Int = readable): ByteArray = readBuffer {
+  fun getBytes(size: Int = readable): ByteArray = read {
     val bytes = ByteArray(size)
     it.get(bytes)
     bytes
@@ -102,7 +105,7 @@ interface ByteBuffer : Closeable {
       readPosition += readOffset
       reset()
     } else {
-      readBuffer {
+      read {
         it.put(buffer, bufferOffset, readSize)
       }
     }
@@ -117,7 +120,7 @@ interface ByteBuffer : Closeable {
       reset()
     } else {
       val buffer = ByteArray(1024)
-      readBuffer {
+      read {
         while (it.remaining() > 0) {
           it.put(buffer)
           os.write(buffer)
@@ -134,8 +137,8 @@ interface ByteBuffer : Closeable {
       readPosition += size
       reset()
     } else {
-      readBuffer { read ->
-        buffer.writeBuffer { write -> write.put(read) }
+      read { read ->
+        buffer.write { write -> write.put(read) }
       }
     }
     return size
@@ -148,21 +151,21 @@ interface ByteBuffer : Closeable {
    * 数据写入方法
    */
 
-  fun put(byte: Byte): Unit = writeBuffer { it.put(byte) }
-  fun put(char: Char): Unit = writeBuffer { it.putChar(char) }
-  fun put(short: Short): Unit = writeBuffer { it.putShort(short) }
-  fun put(int: Int): Unit = writeBuffer { it.putInt(int) }
-  fun put(long: Long): Unit = writeBuffer { it.putLong(long) }
-  fun put(float: Float): Unit = writeBuffer { it.putFloat(float) }
-  fun put(double: Double): Unit = writeBuffer { it.putDouble(double) }
+  fun put(byte: Byte): Unit = write { it.put(byte) }
+  fun put(char: Char): Unit = write { it.putChar(char) }
+  fun put(short: Short): Unit = write { it.putShort(short) }
+  fun put(int: Int): Unit = write { it.putInt(int) }
+  fun put(long: Long): Unit = write { it.putLong(long) }
+  fun put(float: Float): Unit = write { it.putFloat(float) }
+  fun put(double: Double): Unit = write { it.putDouble(double) }
   fun put(str: String): Unit = put(str.toByteArray())
-
+  fun put(buffer: ByteBuffer): Int = buffer.writeTo(this)
   fun put(byteArray: ByteArray, startIndex: Int = 0, endIndex: Int = byteArray.size - startIndex) {
     if (hasArray) {
       byteArray.copyInto(array, writeOffset, startIndex, endIndex)
       writePosition += endIndex - startIndex
     } else {
-      writeBuffer {
+      write {
         it.put(byteArray, startIndex, endIndex - startIndex)
       }
     }
@@ -190,5 +193,27 @@ interface ByteBuffer : Closeable {
 
   fun put(array: DoubleArray, index: Int = 0, size: Int = array.size - index) {
     array.forEachIndex(index, index + size - 1, this::put)
+  }
+
+  fun fill(byte: Byte) {
+    readPosition = 0
+    writePosition = 0
+    write {
+      while (it.remaining() != 0) {
+        it.put(byte)
+      }
+    }
+    writePosition = 0
+  }
+
+  fun split(maxSize: Int): Array<out ByteBuffer> {
+    val size = (((capacity - 1) / maxSize) + 1).and(0x7fff_ffff)
+    return Array(size) {
+      if (it != size - 1) {
+        slice(it * maxSize, maxSize)
+      } else {
+        slice(it * maxSize, capacity - it * maxSize)
+      }
+    }
   }
 }

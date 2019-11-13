@@ -12,6 +12,7 @@ class DirectByteBuffer(private var buffer: java.nio.ByteBuffer) : ByteBuffer {
   override val arrayOffset: Int = 0
   override var writePosition: Int = 0
   override var readPosition: Int = 0
+  override var resized: Boolean = false
 
   override fun readBuffer(): java.nio.ByteBuffer {
     if (buffer.limit() != writePosition)
@@ -53,6 +54,7 @@ class DirectByteBuffer(private var buffer: java.nio.ByteBuffer) : ByteBuffer {
 
   override fun resize(newSize: Int): Boolean {
     if (newSize <= buffer.capacity()) return false
+    resized = true
     val newBuf = java.nio.ByteBuffer.allocateDirect(newSize)
     newBuf.put(readBuffer())
     buffer = newBuf
@@ -62,7 +64,15 @@ class DirectByteBuffer(private var buffer: java.nio.ByteBuffer) : ByteBuffer {
   }
 
   override fun toString(): String {
-    return "DirectByteBuffer(buffer=$buffer, hasArray=$hasArray, array=${array.contentToString()
-    }, capacity=$capacity, writePosition=$writePosition, readPosition=$readPosition)"
+    return "DirectByteBuffer(buffer=$buffer, hasArray=$hasArray, capacity=$capacity, writePosition=$writePosition, readPosition=$readPosition)"
+  }
+
+  override fun fill(byte: Byte) {
+    readPosition = 0
+    writePosition = 0
+    buffer.clear()
+    while (buffer.remaining() != 0) {
+      buffer.put(byte)
+    }
   }
 }

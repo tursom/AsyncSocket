@@ -5,6 +5,7 @@ import cn.tursom.socket.NioClient
 import cn.tursom.socket.server.BuffedNioServer
 import cn.tursom.utils.CurrentTimeMillisClock
 import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.async
 import kotlinx.coroutines.launch
 import java.net.SocketException
 import java.util.concurrent.TimeoutException
@@ -53,6 +54,7 @@ fun main() {
   val start = CurrentTimeMillisClock.now
 
   repeat(connectionCount) {
+    GlobalScope.async {  }
     GlobalScope.launch {
       val socket = NioClient.connect("127.0.0.1", port)
       clientMemoryPool { buffer ->

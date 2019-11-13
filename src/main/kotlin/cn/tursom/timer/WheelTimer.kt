@@ -11,10 +11,10 @@ import kotlin.concurrent.thread
 
 @Suppress("CanBeParameter", "MemberVisibilityCanBePrivate")
 class WheelTimer(
-  val tick: Long = 200,
-  val wheelSize: Int = 512,
-  val name: String = "wheelTimerLooper",
-  val taskQueueFactory: () -> TaskQueue = { NonLockTaskQueue() }
+    val tick: Long = 200,
+    val wheelSize: Int = 512,
+    val name: String = "wheelTimerLooper",
+    val taskQueueFactory: () -> TaskQueue = { NonLockTaskQueue() }
 ) : Timer {
   var closed = false
   val taskQueueArray = AtomicReferenceArray(Array(wheelSize) { taskQueueFactory() })
@@ -27,67 +27,66 @@ class WheelTimer(
   }
 
   init {
-    val startTime = CurrentTimeMillisClock.now
-    ScheduledThreadPoolExecutor(1) { runnable ->
-      val thread = Thread(runnable, name)
-      thread.isDaemon = true
-      thread
-    }.scheduleAtFixedRate(tick, tick, TimeUnit.MILLISECONDS) {
-      val outTimeQueue = taskQueueFactory()
-      val newQueue = taskQueueFactory()
-      val taskQueue = taskQueueArray.getAndSet(position++, newQueue)
-      position %= wheelSize
-      while (true) {
-        val task = taskQueue.take() ?: break
-        if (task.canceled) {
-
-          continue
-        } else if (task.isOutTime) {
-          outTimeQueue.offer(task)
-        } else {
-          newQueue.offer(task)
-        }
-      }
-
-      runNow(outTimeQueue)
-    }
-    //thread(isDaemon = true, name = name) {
-    //  val startTime = CurrentTimeMillisClock.now
-    //  while (!closed) {
-    //    position %= wheelSize
+    //ScheduledThreadPoolExecutor(1) { runnable ->
+    //  val thread = Thread(runnable, name)
+    //  thread.isDaemon = true
+    //  thread
+    //}.scheduleAtFixedRate(tick, tick, TimeUnit.MILLISECONDS) {
+    //  val outTimeQueue = taskQueueFactory()
+    //  val newQueue = taskQueueFactory()
+    //  val taskQueue = taskQueueArray.getAndSet(position++, newQueue)
+    //  position %= wheelSize
+    //  while (true) {
+    //    val task = taskQueue.take() ?: break
+    //    if (task.canceled) {
     //
-    //    val outTimeQueue = taskQueueFactory()
-    //    val newQueue = taskQueueFactory()
-    //    val taskQueue = taskQueueArray.getAndSet(position++, newQueue)
-    //
-    //    while (true) {
-    //      val node = taskQueue.take() ?: break
-    //      if (node.canceled) {
-    //        continue
-    //      } else if (node.isOutTime) {
-    //        outTimeQueue.offer(node)
-    //        //runNow(node)
-    //      } else {
-    //        newQueue.offer(node)
-    //      }
+    //      continue
+    //    } else if (task.isOutTime) {
+    //      outTimeQueue.offer(task)
+    //    } else {
+    //      newQueue.offer(task)
     //    }
-    //
-    //    runNow(outTimeQueue)
-    //
-    //    val nextSleep = startTime + tick * position - CurrentTimeMillisClock.now
-    //    if (nextSleep > 0) sleep(tick)
     //  }
+    //
+    //  runNow(outTimeQueue)
     //}
+    thread(isDaemon = true, name = name) {
+      val startTime = CurrentTimeMillisClock.now
+      while (!closed) {
+        position %= wheelSize
+
+        val outTimeQueue = taskQueueFactory()
+        val newQueue = taskQueueFactory()
+        val taskQueue = taskQueueArray.getAndSet(position++, newQueue)
+
+        while (true) {
+          val node = taskQueue.take() ?: break
+          if (node.canceled) {
+            continue
+          } else if (node.isOutTime) {
+            outTimeQueue.offer(node)
+            //runNow(node)
+          } else {
+            newQueue.offer(node)
+          }
+        }
+
+        runNow(outTimeQueue)
+
+        val nextSleep = startTime + tick * position - CurrentTimeMillisClock.now
+        if (nextSleep > 0) sleep(tick)
+      }
+    }
   }
 
   companion object {
     val timer by lazy { WheelTimer(200, 1024) }
     val smoothTimer by lazy { WheelTimer(20, 128) }
     fun ScheduledThreadPoolExecutor.scheduleAtFixedRate(
-      var2: Long,
-      var4: Long,
-      var6: TimeUnit,
-      var1: () -> Unit
+        var2: Long,
+        var4: Long,
+        var6: TimeUnit,
+        var1: () -> Unit
     ): ScheduledFuture<*> = scheduleAtFixedRate(var1, var2, var4, var6)
   }
 }

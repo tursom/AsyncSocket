@@ -18,4 +18,6 @@ object CurrentTimeMillisClock {
       thread
     }.scheduleAtFixedRate({ tick = System.currentTimeMillis() }, 1, 1, TimeUnit.MILLISECONDS)
   }
+
+  //val now get() = System.currentTimeMillis()
 }

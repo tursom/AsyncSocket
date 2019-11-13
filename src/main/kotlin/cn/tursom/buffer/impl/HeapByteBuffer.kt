@@ -19,6 +19,7 @@ class HeapByteBuffer(private var buffer: java.nio.ByteBuffer) : ByteBuffer {
   override val arrayOffset: Int get() = buffer.arrayOffset()
   override var writePosition: Int = 0
   override var readPosition: Int = 0
+  override var resized: Boolean = false
 
   override fun readBuffer(): java.nio.ByteBuffer {
     if (buffer.limit() != writePosition)
@@ -60,6 +61,7 @@ class HeapByteBuffer(private var buffer: java.nio.ByteBuffer) : ByteBuffer {
 
   override fun resize(newSize: Int): Boolean {
     if (newSize <= buffer.capacity()) return false
+    resized = true
     val newBuf = java.nio.ByteBuffer.allocate(newSize)
     newBuf.put(array, readOffset, readable)
     buffer = newBuf
@@ -69,9 +71,12 @@ class HeapByteBuffer(private var buffer: java.nio.ByteBuffer) : ByteBuffer {
   }
 
   override fun toString(): String {
-    return "HeapByteBuffer(buffer=$buffer, hasArray=$hasArray, array=${array.contentToString()
-    }, capacity=$capacity, arrayOffset=$arrayOffset, writePosition=$writePosition, readPosition=$readPosition)"
+    return "HeapByteBuffer(buffer=$buffer, hasArray=$hasArray, capacity=$capacity, arrayOffset=$arrayOffset, writePosition=$writePosition, readPosition=$readPosition)"
   }
 
-
+  override fun fill(byte: Byte) {
+    writePosition = 0
+    readPosition = 0
+    array.fill(byte, arrayOffset, arrayOffset + capacity)
+  }
 }
