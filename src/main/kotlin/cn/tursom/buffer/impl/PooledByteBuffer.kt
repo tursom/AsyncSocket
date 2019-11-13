@@ -1,6 +1,7 @@
 package cn.tursom.buffer.impl
 
 import cn.tursom.buffer.ByteBuffer
+import cn.tursom.buffer.ProxyByteBuffer
 import cn.tursom.pool.MemoryPool
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicInteger
@@ -9,16 +10,16 @@ import java.util.concurrent.atomic.AtomicInteger
  * 在被垃圾回收时能保证释放占用的内存池内存
  */
 class PooledByteBuffer(
-    private val buffer: ByteBuffer,
+    override val agent: ByteBuffer,
     private val pool: MemoryPool,
     val token: Int
-) : ByteBuffer by buffer {
+) : ProxyByteBuffer, ByteBuffer by agent {
   /**
    * 这个变量保证 buffer 不会被释放多次
    */
   private val open = AtomicBoolean(true)
   private val childCount = AtomicInteger(0)
-  override val resized get() = buffer.resized
+  override val resized get() = agent.resized
 
   override val closed: Boolean get() = !open.get() && !resized
   override fun close() {
@@ -30,7 +31,7 @@ class PooledByteBuffer(
   }
 
   override fun resize(newSize: Int): Boolean {
-    val successful = buffer.resize(newSize)
+    val successful = agent.resize(newSize)
     if (successful) {
       close()
     }
@@ -38,11 +39,11 @@ class PooledByteBuffer(
   }
 
   override fun slice(offset: Int, size: Int): ByteBuffer {
-    return SplitByteBuffer(this, childCount, buffer.slice(offset, size))
+    return SplitByteBuffer(this, childCount, agent.slice(offset, size))
   }
 
   override fun toString(): String {
-    return "PooledByteBuffer(buffer=$buffer, pool=$pool, token=$token, open=$open)"
+    return "PooledByteBuffer(buffer=$agent, pool=$pool, token=$token, open=$open)"
   }
 
   protected fun finalize() {
