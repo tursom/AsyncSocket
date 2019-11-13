@@ -2,7 +2,7 @@ package cn.tursom.socket
 
 import cn.tursom.buffer.ByteBuffer
 import cn.tursom.pool.MemoryPool
-import cn.tursom.socket.niothread.NioThread
+import cn.tursom.niothread.NioThread
 import java.io.Closeable
 import java.net.SocketException
 import java.nio.channels.SelectionKey

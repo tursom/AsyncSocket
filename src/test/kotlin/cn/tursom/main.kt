@@ -3,6 +3,7 @@ package cn.tursom
 import cn.tursom.pool.DirectMemoryPool
 import cn.tursom.socket.NioClient
 import cn.tursom.socket.server.BuffedNioServer
+import cn.tursom.utils.CurrentTimeMillisClock
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
 import java.net.SocketException
@@ -49,7 +50,7 @@ fun main() {
 
   val clientMemoryPool = DirectMemoryPool(1024, connectionCount)
 
-  val start = System.currentTimeMillis()
+  val start = CurrentTimeMillisClock.now
 
   repeat(connectionCount) {
     GlobalScope.launch {
@@ -89,7 +90,7 @@ fun main() {
     Thread.sleep(500)
   }
 
-  val end = System.currentTimeMillis()
+  val end = CurrentTimeMillisClock.now
   println(end - start)
   server.close()
 }

@@ -1,18 +1,15 @@
 package cn.tursom.niothread
 
-import cn.tursom.socket.niothread.NioThread
-import cn.tursom.socket.server.NioLoopServer
 import java.nio.channels.SelectableChannel
 import java.nio.channels.SelectionKey
 import java.nio.channels.Selector
-import java.nio.channels.ServerSocketChannel
 import java.util.concurrent.*
 
 @Suppress("MemberVisibilityCanBePrivate")
 class ThreadPoolNioThread(
   val threadName: String = "",
   override val selector: Selector = Selector.open(),
-  override val isDaemon: Boolean = false,
+  override val daemon: Boolean = false,
   override val timeout: Long = 3000,
   override val workLoop: (thread: NioThread, key: SelectionKey) -> Unit
 ) : NioThread {
@@ -23,7 +20,7 @@ class ThreadPoolNioThread(
     ThreadFactory {
       val thread = Thread(it)
       this.thread = thread
-      thread.isDaemon = isDaemon
+      thread.isDaemon = daemon
       thread.name = threadName
       thread
     })

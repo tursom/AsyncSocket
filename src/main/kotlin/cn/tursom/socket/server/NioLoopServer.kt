@@ -4,7 +4,7 @@ import cn.tursom.niothread.WorkerLoopNioThread
 import cn.tursom.niothread.loophandler.BossLoopHandler
 import cn.tursom.socket.NioProtocol
 import cn.tursom.niothread.loophandler.WorkerLoopHandler
-import cn.tursom.socket.niothread.NioThread
+import cn.tursom.niothread.NioThread
 import java.net.InetSocketAddress
 import java.nio.channels.SelectionKey
 import java.nio.channels.ServerSocketChannel
@@ -21,7 +21,7 @@ class NioLoopServer(
     threadName: String,
     workLoop: (thread: NioThread, key: SelectionKey) -> Unit
   ) -> NioThread = { name, workLoop ->
-    WorkerLoopNioThread(name, workLoop = workLoop, isDaemon = false)
+    WorkerLoopNioThread(name, workLoop = workLoop, daemon = false)
   }
 ) : SocketServer {
   private val listenChannel = ServerSocketChannel.open()

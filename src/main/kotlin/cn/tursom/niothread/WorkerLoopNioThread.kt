@@ -1,6 +1,5 @@
 package cn.tursom.niothread
 
-import cn.tursom.socket.niothread.NioThread
 import cn.tursom.utils.NonLockLinkedList
 import java.nio.channels.SelectionKey
 import java.nio.channels.Selector
@@ -9,7 +8,7 @@ import java.nio.channels.Selector
 class WorkerLoopNioThread(
   val threadName: String = "nioLoopThread",
   override val selector: Selector = Selector.open(),
-  override val isDaemon: Boolean = false,
+  override val daemon: Boolean = false,
   override val timeout: Long = 3000,
   override val workLoop: (thread: NioThread, key: SelectionKey) -> Unit
 ) : NioThread {
@@ -35,7 +34,7 @@ class WorkerLoopNioThread(
         e.printStackTrace()
       }
       while (true) try {
-        (waitQueue.take() ?: break).invoke()
+        (waitQueue.take() ?: break)()
       } catch (e: Exception) {
         e.printStackTrace()
       }
@@ -44,7 +43,7 @@ class WorkerLoopNioThread(
 
   init {
     thread.name = threadName
-    thread.isDaemon = isDaemon
+    thread.isDaemon = daemon
     thread.start()
   }
 
@@ -77,28 +76,28 @@ class WorkerLoopNioThread(
   class Future<T> : NioThreadTaskFuture<T> {
     private val lock = Object()
     private var exception: Throwable? = null
-    private var result: Pair<T, Boolean>? = null
+    private var result: T? = null
 
     @Throws(Throwable::class)
     override fun get(): T {
       val result = this.result
       return when {
         exception != null -> throw exception as Throwable
-        result != null -> result.first
+        result != null -> result
         else -> synchronized(lock) {
           lock.wait()
           val exception = this.exception
           if (exception != null) {
             throw exception
           } else {
-            this.result!!.first
+            this.result!!
           }
         }
       }
     }
 
     fun resume(value: T) {
-      result = value to true
+      result = value
       synchronized(lock) {
         lock.notifyAll()
       }

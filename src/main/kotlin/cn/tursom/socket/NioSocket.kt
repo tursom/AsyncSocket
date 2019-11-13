@@ -4,7 +4,7 @@ import cn.tursom.buffer.ByteBuffer
 import cn.tursom.buffer.read
 import cn.tursom.buffer.write
 import cn.tursom.pool.MemoryPool
-import cn.tursom.socket.niothread.NioThread
+import cn.tursom.niothread.NioThread
 import cn.tursom.timer.Timer
 import cn.tursom.timer.TimerTask
 import cn.tursom.timer.WheelTimer

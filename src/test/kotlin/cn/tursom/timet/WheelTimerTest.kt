@@ -1,6 +1,7 @@
 package cn.tursom.timet
 
 import cn.tursom.timer.WheelTimer
+import cn.tursom.utils.CurrentTimeMillisClock
 import kotlinx.coroutines.runBlocking
 import org.junit.Test
 import kotlin.coroutines.resume
@@ -11,13 +12,13 @@ class WheelTimerTest {
   @Test
   fun testTimer() {
     runBlocking {
-      println(System.currentTimeMillis())
+      println(CurrentTimeMillisClock.now)
       println(suspendCoroutine<String> { cont ->
         timer.exec(10) {
           cont.resume("Hello")
         }
       })
-      println(System.currentTimeMillis())
+      println(CurrentTimeMillisClock.now)
     }
   }
 }

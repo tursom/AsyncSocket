@@ -1,5 +1,7 @@
 package cn.tursom.timer
 
+import cn.tursom.utils.CurrentTimeMillisClock
+
 class SynchronizedTaskQueue : TaskQueue {
   val root: TaskNode = TaskNode(0, {}, null, null)
 
@@ -13,7 +15,7 @@ class SynchronizedTaskQueue : TaskQueue {
   }
 
   override fun offer(task: () -> Unit, timeout: Long): TaskNode {
-    return offer(task, timeout, System.currentTimeMillis())
+    return offer(task, timeout, CurrentTimeMillisClock.now)
   }
 
   override fun offer(task: TimerTask): TimerTask {
@@ -42,7 +44,7 @@ class SynchronizedTaskQueue : TaskQueue {
       override val task: () -> Unit,
       @Volatile var prev: TaskNode?,
       @Volatile var next: TaskNode?,
-      override val createTime: Long = System.currentTimeMillis()
+      override val createTime: Long = CurrentTimeMillisClock.now
   ) : TimerTask {
     @Volatile
     override var canceled: Boolean = false

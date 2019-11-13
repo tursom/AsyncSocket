@@ -1,5 +1,6 @@
 package cn.tursom.timer
 
+import cn.tursom.utils.CurrentTimeMillisClock
 import java.lang.Thread.sleep
 import java.util.concurrent.atomic.AtomicReferenceArray
 import kotlin.concurrent.thread
@@ -24,7 +25,7 @@ class WheelTimer(
 
   init {
     thread(isDaemon = true, name = name) {
-      val startTime = System.currentTimeMillis()
+      val startTime = CurrentTimeMillisClock.now
       while (!closed) {
         position %= wheelSize
 
@@ -46,7 +47,7 @@ class WheelTimer(
 
         runNow(outTimeQueue)
 
-        val nextSleep = startTime + tick * position - System.currentTimeMillis()
+        val nextSleep = startTime + tick * position - CurrentTimeMillisClock.now
         if (nextSleep > 0) sleep(tick)
       }
     }

@@ -3,6 +3,7 @@ package cn.tursom.buffer
 import cn.tursom.utils.forEachIndex
 import java.io.Closeable
 import java.io.OutputStream
+import java.nio.Buffer
 import kotlin.math.min
 
 /**
@@ -35,8 +36,8 @@ interface ByteBuffer : Closeable {
     }
   }
 
-  val readable: Int get() = readBuffer { it.remaining() }
-  val writeable: Int get() = writeBuffer { it.remaining() }
+  val readable: Int get() = readBuffer(Buffer::remaining)
+  val writeable: Int get() = writeBuffer(Buffer::remaining)
 
   val hasArray: Boolean
   val array: ByteArray

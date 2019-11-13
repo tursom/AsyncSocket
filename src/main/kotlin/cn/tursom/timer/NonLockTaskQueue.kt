@@ -1,5 +1,6 @@
 package cn.tursom.timer
 
+import cn.tursom.utils.CurrentTimeMillisClock
 import java.util.concurrent.atomic.AtomicReference
 
 class NonLockTaskQueue : TaskQueue {
@@ -13,7 +14,7 @@ class NonLockTaskQueue : TaskQueue {
   }
 
   override fun offer(task: () -> Unit, timeout: Long): TimerTask {
-    return add(TaskListNode(timeout, task, System.currentTimeMillis(), root.get()))
+    return add(TaskListNode(timeout, task, CurrentTimeMillisClock.now, root.get()))
   }
 
   override fun offer(task: TimerTask): TimerTask {

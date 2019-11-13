@@ -3,7 +3,7 @@ package cn.tursom.socket.server
 import cn.tursom.socket.AsyncSocket
 import cn.tursom.socket.NioSocket
 import cn.tursom.socket.NioProtocol
-import cn.tursom.socket.niothread.NioThread
+import cn.tursom.niothread.NioThread
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch

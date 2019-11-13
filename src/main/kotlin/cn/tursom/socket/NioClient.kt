@@ -19,7 +19,7 @@ object NioClient {
   @JvmStatic
   private val nioThread = WorkerLoopNioThread(
     "nioClient",
-    isDaemon = true,
+    daemon = true,
     workLoop = WorkerLoopHandler(protocol)::handle
   )
 

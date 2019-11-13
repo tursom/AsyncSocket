@@ -1,6 +1,5 @@
-package cn.tursom.socket.niothread
+package cn.tursom.niothread
 
-import cn.tursom.niothread.NioThreadTaskFuture
 import java.io.Closeable
 import java.nio.channels.SelectableChannel
 import java.nio.channels.SelectionKey
@@ -17,7 +16,7 @@ interface NioThread : Closeable {
   val timeout: Long
   val workLoop: (thread: NioThread, key: SelectionKey) -> Unit
   val thread: Thread
-  val isDaemon: Boolean
+  val daemon: Boolean
 
   fun wakeup() {
     if (Thread.currentThread() != thread) selector.wakeup()

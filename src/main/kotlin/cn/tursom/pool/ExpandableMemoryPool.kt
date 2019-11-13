@@ -29,7 +29,7 @@ class ExpandableMemoryPool(private val poolFactory: () -> MemoryPool) : MemoryPo
     return newPool()
   }
 
-  override fun getMemoryOrNull(): ByteBuffer? = getMemory()
+  override fun getMemoryOrNull(): ByteBuffer = getMemory()
 
   override fun toString(): String {
     return "ExpandableMemoryPool(poolList=$poolList, usingPool=$usingPool)"

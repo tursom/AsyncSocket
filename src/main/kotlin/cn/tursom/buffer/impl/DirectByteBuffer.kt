@@ -6,13 +6,9 @@ import cn.tursom.buffer.read
 class DirectByteBuffer(private var buffer: java.nio.ByteBuffer) : ByteBuffer {
   constructor(size: Int) : this(java.nio.ByteBuffer.allocateDirect(size))
 
-  init {
-    assert(buffer.hasArray())
-  }
-
   override val hasArray: Boolean = false
   override val array: ByteArray get() = buffer.array()
-  override val capacity: Int = buffer.capacity()
+  override val capacity: Int get() = buffer.capacity()
   override val arrayOffset: Int = 0
   override var writePosition: Int = 0
   override var readPosition: Int = 0
@@ -67,6 +63,6 @@ class DirectByteBuffer(private var buffer: java.nio.ByteBuffer) : ByteBuffer {
 
   override fun toString(): String {
     return "DirectByteBuffer(buffer=$buffer, hasArray=$hasArray, array=${array.contentToString()
-    }, capacity=$capacity, arrayOffset=$arrayOffset, writePosition=$writePosition, readPosition=$readPosition)"
+    }, capacity=$capacity, writePosition=$writePosition, readPosition=$readPosition)"
   }
 }

@@ -1,9 +1,11 @@
 package cn.tursom
 
+import cn.tursom.utils.CurrentTimeMillisClock
+
 inline fun usingTime(action: () -> Unit): Long {
-  val t1 = System.currentTimeMillis()
+  val t1 = CurrentTimeMillisClock.now
   action()
-  val t2 = System.currentTimeMillis()
+  val t2 = CurrentTimeMillisClock.now
   return t2 - t1
 }
 
