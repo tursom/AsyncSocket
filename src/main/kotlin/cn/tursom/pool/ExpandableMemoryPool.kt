@@ -15,7 +15,6 @@ class ExpandableMemoryPool(private val poolFactory: () -> MemoryPool) : MemoryPo
   private val poolLock = AtomicBoolean(false)
 
   init {
-    System.err.println("newPool-${poolCount.incrementAndGet()}")
     poolList.add(poolFactory())
   }
 
@@ -53,7 +52,6 @@ class ExpandableMemoryPool(private val poolFactory: () -> MemoryPool) : MemoryPo
   @Suppress("PLATFORM_CLASS_MAPPED_TO_KOTLIN")
   private fun newPool(): ByteBuffer {
     return if (poolLock.compareAndSet(false, true)) {
-      System.err.println("newPool-${poolCount.incrementAndGet()}")
       val newPool = poolFactory()
       poolList.add(newPool)
       poolLock.set(false)
@@ -68,9 +66,5 @@ class ExpandableMemoryPool(private val poolFactory: () -> MemoryPool) : MemoryPo
       }
       poolList.last().getMemory()
     }
-  }
-
-  companion object {
-    private val poolCount = AtomicInteger(0)
   }
 }
