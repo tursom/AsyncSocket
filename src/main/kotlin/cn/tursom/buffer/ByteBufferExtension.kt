@@ -5,6 +5,7 @@
 
 package cn.tursom.buffer
 
+import cn.tursom.buffer.impl.ArrayByteBuffer
 import java.nio.channels.SocketChannel
 
 
@@ -73,3 +74,5 @@ fun SocketChannel.write(buffers: Array<out ByteBuffer>): Long {
     buffers.forEachIndexed { index, byteBuffer -> byteBuffer.finishRead(bufferArray[index]) }
   }
 }
+
+fun Array<out ByteBuffer>.asMultipleByteBuffer() = ArrayByteBuffer(this)
