@@ -1,7 +1,5 @@
 package cn.tursom.buffer
 
-import cn.tursom.buffer.impl.DirectByteBuffer
-import cn.tursom.buffer.impl.HeapByteBuffer
 import cn.tursom.utils.forEachIndex
 import java.io.Closeable
 import java.io.OutputStream
@@ -37,7 +35,6 @@ interface ByteBuffer : Closeable {
       finishWrite(buffer)
     }
   }
-
   val readable: Int get() = read(Buffer::remaining)
   val writeable: Int get() = write(Buffer::remaining)
 

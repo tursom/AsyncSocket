@@ -54,7 +54,7 @@ fun main() {
   val start = CurrentTimeMillisClock.now
 
   repeat(connectionCount) {
-    GlobalScope.async {  }
+    GlobalScope.async { }
     GlobalScope.launch {
       val socket = NioClient.connect("127.0.0.1", port)
       clientMemoryPool { buffer ->

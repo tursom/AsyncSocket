@@ -1,6 +1,7 @@
 package cn.tursom.socket
 
 import cn.tursom.buffer.ByteBuffer
+import cn.tursom.buffer.MultipleByteBuffer
 import cn.tursom.pool.MemoryPool
 import cn.tursom.niothread.NioThread
 import java.io.Closeable
@@ -18,6 +19,8 @@ interface AsyncSocket : Closeable {
   suspend fun read(buffer: Array<out ByteBuffer>, timeout: Long = 0L): Long
   suspend fun write(buffer: ByteBuffer, timeout: Long = 0L): Int = write(arrayOf(buffer), timeout).toInt()
   suspend fun read(buffer: ByteBuffer, timeout: Long = 0L): Int = read(arrayOf(buffer), timeout).toInt()
+  suspend fun write(buffer: MultipleByteBuffer, timeout: Long = 0L): Long = write(buffer.buffers, timeout)
+  suspend fun read(buffer: MultipleByteBuffer, timeout: Long = 0L): Long = read(buffer.buffers, timeout)
 
   /**
    * 在有数据读取的时候自动由内存池分配内存

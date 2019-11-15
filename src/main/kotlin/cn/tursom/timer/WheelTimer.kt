@@ -18,6 +18,7 @@ class WheelTimer(
 ) : Timer {
   var closed = false
   val taskQueueArray = AtomicReferenceArray(Array(wheelSize) { taskQueueFactory() })
+  @Volatile
   private var position = 0
 
   override fun exec(timeout: Long, task: () -> Unit): TimerTask {
