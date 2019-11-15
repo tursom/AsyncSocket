@@ -12,7 +12,7 @@ import kotlinx.coroutines.GlobalScope
  */
 class BuffedNioServer(
   port: Int,
-  memoryPool: MemoryPool,
+  private val memoryPool: MemoryPool,
   backlog: Int = 50,
   coroutineScope: CoroutineScope = GlobalScope,
   handler: suspend BufferedAsyncSocket.() -> Unit
@@ -30,9 +30,14 @@ class BuffedNioServer(
     handler: suspend BufferedAsyncSocket.() -> Unit
   ) : this(
     port,
-    ThreadLocalMemoryPool { ExpandableMemoryPool { DirectMemoryPool(blockSize, blockCount) } },
+    ExpandableMemoryPool { DirectMemoryPool(blockSize, blockCount) },
     backlog,
     coroutineScope,
     handler
   )
+
+  override fun close() {
+    super.close()
+    memoryPool.gc()
+  }
 }

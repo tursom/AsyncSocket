@@ -15,6 +15,10 @@ class ThreadLocalMemoryPool(private val poolFactory: () -> MemoryPool) : MemoryP
     return "ThreadLocalMemoryPool(threadLocal=$threadLocal)"
   }
 
+  override fun gc() {
+    threadLocal.get()?.gc()
+  }
+
   private fun getPool(): MemoryPool {
     var pool = threadLocal.get()
     if (pool == null) {

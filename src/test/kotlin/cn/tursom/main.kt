@@ -1,6 +1,9 @@
 package cn.tursom
 
+import cn.tursom.buffer.impl.PooledByteBuffer
 import cn.tursom.pool.DirectMemoryPool
+import cn.tursom.pool.ExpandableMemoryPool
+import cn.tursom.pool.LongBitSetDirectMemoryPool
 import cn.tursom.socket.NioClient
 import cn.tursom.socket.server.BuffedNioServer
 import cn.tursom.utils.CurrentTimeMillisClock
@@ -9,6 +12,7 @@ import kotlinx.coroutines.launch
 import java.net.SocketException
 import java.util.concurrent.TimeoutException
 import java.util.concurrent.atomic.AtomicInteger
+import kotlin.math.log
 
 fun log(log: String) {
   println("${CurrentTimeMillisClock.now}: $log")
@@ -21,7 +25,7 @@ fun main() {
   // 创建一个直接内存池，每个块是1024字节，共有10240个块
   //val memoryPool = DirectMemoryPool(1024, 10240)
   // 创建服务器对象
-  val server = BuffedNioServer(port, 4096, 128) {
+  val server = BuffedNioServer(port, ExpandableMemoryPool { LongBitSetDirectMemoryPool(1024) }) {
     //log("get new connection")
     // 这里处理业务逻辑，套接字对象被以 this 的方式传进来
     // 从内存池中获取一个内存块
@@ -32,6 +36,7 @@ fun main() {
         val buffer = read(10_000)
         // 输出读取到的数据
         //log("server recv from ${channel.remoteAddress}: [${buffer.readable}] ${buffer.toString(buffer.readable)}")
+        //println((buffer as PooledByteBuffer).token)
         // 原封不动的返回数据
         val writeSize = write(buffer)
         //log("server send [$writeSize] bytes")
@@ -90,7 +95,7 @@ fun main() {
   }
 
   while (remain.get() != 0) {
-    println(remain.get())
+    log(remain.get().toString())
     Thread.sleep(500)
   }
 

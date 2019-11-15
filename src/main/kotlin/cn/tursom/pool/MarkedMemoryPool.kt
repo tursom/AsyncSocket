@@ -29,6 +29,10 @@ class MarkedMemoryPool(private val pool: MemoryPool) : MemoryPool by pool, Close
     allocatedList.clear()
   }
 
+  override fun gc() {
+    pool.gc()
+  }
+
   override fun toString(): String {
     val allocated = ArrayList<Int>(allocatedList.size)
     allocatedList.forEach {

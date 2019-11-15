@@ -2,17 +2,29 @@ package cn.tursom.pool
 
 import cn.tursom.buffer.ByteBuffer
 import java.util.concurrent.atomic.AtomicBoolean
+import java.util.concurrent.atomic.AtomicInteger
 
 /**
  * 可自动申请新内存空间的内存池
  * 线程安全
  */
 class ExpandableMemoryPool(private val poolFactory: () -> MemoryPool) : MemoryPool {
-  private val poolList = ArrayList<MemoryPool>(1)
+  private val poolList = ArrayList<MemoryPool>(4)
+  @Volatile
   private var usingPool = 0
+  private val poolLock = AtomicBoolean(false)
 
   init {
+    System.err.println("newPool-${poolCount.incrementAndGet()}")
     poolList.add(poolFactory())
+  }
+
+  override fun gc() {
+    while (poolList.size > 1) {
+      usingPool = 0
+      poolList.removeAt(poolList.size - 1)
+    }
+    usingPool = 0
   }
 
   override fun free(token: Int) = throw NotImplementedError("ExpandableMemoryPool won't allocate any memory")
@@ -21,10 +33,13 @@ class ExpandableMemoryPool(private val poolFactory: () -> MemoryPool) : MemoryPo
     val pool = poolList[usingPool]
     var buffer = pool.getMemoryOrNull()
     if (buffer != null) return buffer
-    repeat(poolList.size) {
-      buffer = poolList[it].getMemoryOrNull()
-      if (buffer != null) usingPool = it
-      return buffer ?: return@repeat
+    try {
+      repeat(poolList.size) {
+        buffer = poolList[it].getMemoryOrNull()
+        if (buffer != null) usingPool = it
+        return buffer ?: return@repeat
+      }
+    } catch (e: Exception) {
     }
     return newPool()
   }
@@ -35,10 +50,10 @@ class ExpandableMemoryPool(private val poolFactory: () -> MemoryPool) : MemoryPo
     return "ExpandableMemoryPool(poolList=$poolList, usingPool=$usingPool)"
   }
 
-  private val poolLock = AtomicBoolean(false)
   @Suppress("PLATFORM_CLASS_MAPPED_TO_KOTLIN")
   private fun newPool(): ByteBuffer {
     return if (poolLock.compareAndSet(false, true)) {
+      System.err.println("newPool-${poolCount.incrementAndGet()}")
       val newPool = poolFactory()
       poolList.add(newPool)
       poolLock.set(false)
@@ -53,5 +68,9 @@ class ExpandableMemoryPool(private val poolFactory: () -> MemoryPool) : MemoryPo
       }
       poolList.last().getMemory()
     }
+  }
+
+  companion object {
+    private val poolCount = AtomicInteger(0)
   }
 }

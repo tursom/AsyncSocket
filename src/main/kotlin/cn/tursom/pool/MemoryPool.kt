@@ -25,4 +25,6 @@ interface MemoryPool {
   fun get() = getMemory()
 
   operator fun get(blockCount: Int): Array<ByteBuffer> = Array(blockCount) { get() }
+
+  fun gc() {}
 }
