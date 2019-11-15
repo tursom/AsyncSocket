@@ -37,7 +37,7 @@ fun SocketChannel.read(buffer: ByteBuffer): Int {
   return if (buffer is MultipleByteBuffer) {
     buffer.writeBuffers { read(it) }.toInt()
   } else {
-    buffer.read { read(it) }
+    buffer.write { read(it) }
   }
 }
 

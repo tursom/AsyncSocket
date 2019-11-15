@@ -5,11 +5,14 @@ import cn.tursom.socket.NioClient
 import cn.tursom.socket.server.BuffedNioServer
 import cn.tursom.utils.CurrentTimeMillisClock
 import kotlinx.coroutines.GlobalScope
-import kotlinx.coroutines.async
 import kotlinx.coroutines.launch
 import java.net.SocketException
 import java.util.concurrent.TimeoutException
 import java.util.concurrent.atomic.AtomicInteger
+
+fun log(log: String) {
+  println("${CurrentTimeMillisClock.now}: $log")
+}
 
 fun main() {
   // 服务器端口，可任意指定
@@ -28,7 +31,7 @@ fun main() {
         // 从套接字中读数据，五秒之内没有数据就抛出异常
         val buffer = read(10_000)
         // 输出读取到的数据
-        //log("server recv from ${channel.remoteAddress}: [${buffer.readableSize}] ${buffer.toString(buffer.readableSize)}")
+        //log("server recv from ${channel.remoteAddress}: [${buffer.readable}] ${buffer.toString(buffer.readable)}")
         // 原封不动的返回数据
         val writeSize = write(buffer)
         //log("server send [$writeSize] bytes")
@@ -54,7 +57,6 @@ fun main() {
   val start = CurrentTimeMillisClock.now
 
   repeat(connectionCount) {
-    GlobalScope.async { }
     GlobalScope.launch {
       val socket = NioClient.connect("127.0.0.1", port)
       clientMemoryPool { buffer ->
@@ -64,7 +66,7 @@ fun main() {
           repeat(dataPerConn) {
             buffer.clear()
             buffer.put(testData)
-            //log("client sending: [${buffer.readableSize}] ${buffer.toString(buffer.readableSize)}")
+            //log("client sending: [${buffer.readable}] ${buffer.toString(buffer.readable)}")
             val writeSize = socket.write(buffer)
             if (writeSize == 0) {
               System.err.println("write size is zero")
@@ -75,7 +77,7 @@ fun main() {
             //log(buffer.toString())
             val readSize = socket.read(buffer)
             //log(buffer.toString())
-            //log("client recv: [$readSize:${buffer.readableSize}] ${buffer.toString(buffer.readableSize)}")
+            //log("client recv: [$readSize:${buffer.readable}] ${buffer.toString(buffer.readable)}")
           }
         } catch (e: Exception) {
           Exception(e).printStackTrace()
