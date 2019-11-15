@@ -14,37 +14,33 @@ abstract class AbstractMemoryPool(
   private val bitMap = AtomicBitSet(blockCount.toLong())
   val allocated: Int get() = bitMap.trueCount.toInt()
 
-  private fun unsafeAllocate(): Int {
-    val index = bitMap.firstDown()
-    return if (index in 0 until blockCount) {
-      bitMap.up(index)
-      index.toInt()
-    } else {
-      -1
-    }
-  }
-
-  private fun unsafeFree(token: Int) {
-    bitMap.down(token.toLong())
-  }
-
-  private fun unsafeGetMemory(token: Int): ByteBuffer {
-    return PooledByteBuffer(memoryPool.slice(token * blockSize, blockSize), this, token)
+  private fun getMemory(token: Int): ByteBuffer = synchronized(this) {
+    PooledByteBuffer(memoryPool.slice(token * blockSize, blockSize), this, token)
   }
 
   /**
    * @return token
    */
-  private fun allocate(): Int = synchronized(this) { unsafeAllocate() }
+  private fun allocate(): Int {
+    var index = bitMap.firstDown()
+    while (index in 0 until blockCount) {
+      if (bitMap.up(index)) {
+        return index.toInt()
+      }
+      index = if (bitMap[index]) bitMap.firstDown() else index
+    }
+    return -1
+  }
 
   override fun free(token: Int) {
-    if (token in 0 until blockCount) synchronized(this) { unsafeFree(token) }
+    @Suppress("ControlFlowWithEmptyBody")
+    if (token in 0 until blockCount) while (!bitMap.down(token.toLong()));
   }
 
   override fun getMemoryOrNull(): ByteBuffer? {
     val token = allocate()
     return if (token in 0 until blockCount) {
-      synchronized(this) { return unsafeGetMemory(token) }
+      return getMemory(token)
     } else {
       null
     }
@@ -52,14 +48,12 @@ abstract class AbstractMemoryPool(
 
   override fun getMemory(): ByteBuffer = getMemoryOrNull() ?: emptyPoolBuffer(blockSize)
 
-  override fun get(blockCount: Int): Array<ByteBuffer> = synchronized(this) {
-    Array(blockCount) {
-      val token = unsafeAllocate()
-      if (token in 0 until blockCount) {
-        unsafeGetMemory(token)
-      } else {
-        emptyPoolBuffer(blockSize)
-      }
+  override fun get(blockCount: Int): Array<ByteBuffer> = Array(blockCount) {
+    val token = allocate()
+    if (token in 0 until blockCount) {
+      getMemory(token)
+    } else {
+      emptyPoolBuffer(blockSize)
     }
   }
 }
