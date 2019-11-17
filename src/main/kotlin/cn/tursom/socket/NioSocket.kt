@@ -41,7 +41,7 @@ class NioSocket(override val key: SelectionKey, override val nioThread: NioThrea
   }
 
   override suspend fun write(buffer: ByteBuffer, timeout: Long): Int {
-    if (buffer.writeable == 0) return emptyBufferCode
+    if (buffer.readable == 0) return emptyBufferCode
     return operate {
       waitWrite(timeout)
       channel.write(buffer)

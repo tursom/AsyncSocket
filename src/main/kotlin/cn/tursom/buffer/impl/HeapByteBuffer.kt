@@ -6,8 +6,11 @@ import cn.tursom.utils.HeapByteBufferUtil
 
 class HeapByteBuffer(private var buffer: java.nio.ByteBuffer) : ByteBuffer {
   constructor(size: Int) : this(java.nio.ByteBuffer.allocate(size))
-  constructor(bytes: ByteArray, offset: Int = 0, size: Int = bytes.size - offset) :
-      this(HeapByteBufferUtil.wrap(bytes, offset, size))
+  constructor(bytes: ByteArray, offset: Int = 0, size: Int = bytes.size - offset)
+      : this(HeapByteBufferUtil.wrap(bytes, offset, size)) {
+    readPosition = offset
+    writePosition = offset + size
+  }
 
   init {
     assert(buffer.hasArray())
