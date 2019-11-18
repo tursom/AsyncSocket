@@ -32,9 +32,12 @@ abstract class AbstractMemoryPool(
     return -1
   }
 
-  override fun free(token: Int) {
-    @Suppress("ControlFlowWithEmptyBody")
-    if (token in 0 until blockCount) while (!bitMap.down(token.toLong()));
+  override fun free(memory: ByteBuffer) {
+    if (memory is PooledByteBuffer && memory.pool == this) {
+      val token = memory.token
+      @Suppress("ControlFlowWithEmptyBody")
+      if (token in 0 until blockCount) while (!bitMap.down(token.toLong()));
+    }
   }
 
   override fun getMemoryOrNull(): ByteBuffer? {

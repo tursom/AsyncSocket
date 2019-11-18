@@ -5,7 +5,7 @@ import cn.tursom.buffer.ByteBuffer
 class ThreadLocalMemoryPool(private val poolFactory: () -> MemoryPool) : MemoryPool {
   private val threadLocal = ThreadLocal<MemoryPool>()
 
-  override fun free(token: Int) = throw NotImplementedError("ThreadLocalMemoryPool won't allocate any memory")
+  override fun free(memory: ByteBuffer) = throw NotImplementedError("ThreadLocalMemoryPool won't allocate any memory")
 
   override fun getMemory(): ByteBuffer = getPool().getMemory()
 

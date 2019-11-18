@@ -10,9 +10,9 @@ import java.util.concurrent.atomic.AtomicInteger
  * 在被垃圾回收时能保证释放占用的内存池内存
  */
 class PooledByteBuffer(
-    override val agent: ByteBuffer,
-    private val pool: MemoryPool,
-    val token: Int
+  override val agent: ByteBuffer,
+  val pool: MemoryPool,
+  val token: Int
 ) : ProxyByteBuffer, ByteBuffer by agent {
   /**
    * 这个变量保证 buffer 不会被释放多次
@@ -25,7 +25,7 @@ class PooledByteBuffer(
   override fun close() {
     if (childCount.get() == 0) {
       if (open.compareAndSet(true, false)) {
-        pool.free(token)
+        pool.free(this)
       }
     }
   }
@@ -47,6 +47,6 @@ class PooledByteBuffer(
   }
 
   protected fun finalize() {
-    pool.free(token)
+    pool.free(this)
   }
 }

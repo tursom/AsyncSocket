@@ -1,10 +1,9 @@
 package cn.tursom
 
 import cn.tursom.buffer.impl.HeapByteBuffer
-import cn.tursom.buffer.impl.PooledByteBuffer
 import cn.tursom.pool.DirectMemoryPool
 import cn.tursom.pool.ExpandableMemoryPool
-import cn.tursom.pool.LongBitSetDirectMemoryPool
+import cn.tursom.pool.ScalabilityMemoryPool
 import cn.tursom.socket.NioClient
 import cn.tursom.socket.server.BuffedNioServer
 import cn.tursom.utils.CurrentTimeMillisClock
@@ -13,7 +12,6 @@ import kotlinx.coroutines.launch
 import java.net.SocketException
 import java.util.concurrent.TimeoutException
 import java.util.concurrent.atomic.AtomicInteger
-import kotlin.math.log
 
 fun log(log: String) {
   println("${CurrentTimeMillisClock.now}: $log")
@@ -27,7 +25,14 @@ fun main() {
   //val memoryPool = DirectMemoryPool(1024, 10240)
   // 创建服务器对象
   //val server = BuffedNioServer(port, ExpandableMemoryPool { LongBitSetDirectMemoryPool(1024) }) {
-  val server = BuffedNioServer(port, ExpandableMemoryPool { DirectMemoryPool(1024, 128) { HeapByteBuffer(it) } }) {
+  val memoryCount = AtomicInteger(0)
+  val server = BuffedNioServer(port, ScalabilityMemoryPool {
+    System.err.println("allocate memory, ${memoryCount.incrementAndGet()} allocated")
+    DirectMemoryPool(1024, 128) {
+      System.err.println("allocate unpooled memory")
+      HeapByteBuffer(it)
+    }
+  }) {
     //log("get new connection")
     // 这里处理业务逻辑，套接字对象被以 this 的方式传进来
     // 从内存池中获取一个内存块
@@ -56,8 +61,8 @@ fun main() {
   val dataPerConn = 1000
   val testData = "testData".toByteArray()
 
-  //val remain = AtomicInteger(connectionCount * dataPerConn)
-  val remain = AtomicInteger(connectionCount)
+  val remain = AtomicInteger(connectionCount * dataPerConn)
+  //val remain = AtomicInteger(connectionCount)
 
   val clientMemoryPool = DirectMemoryPool(1024, connectionCount)
 
@@ -85,11 +90,12 @@ fun main() {
             val readSize = socket.read(buffer)
             //log(buffer.toString())
             //log("client recv: [$readSize:${buffer.readable}] ${buffer.toString(buffer.readable)}")
+            remain.decrementAndGet()
           }
         } catch (e: Exception) {
           Exception(e).printStackTrace()
         } finally {
-          remain.decrementAndGet()
+          //remain.decrementAndGet()
           socket.close()
         }
       }

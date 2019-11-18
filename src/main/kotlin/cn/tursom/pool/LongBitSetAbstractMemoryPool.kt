@@ -39,9 +39,12 @@ abstract class LongBitSetAbstractMemoryPool(
     return index
   }
 
-  override fun free(token: Int) {
-    @Suppress("ControlFlowWithEmptyBody")
-    if (token >= 0) while (!bitMap.down(token));
+  override fun free(memory: ByteBuffer) {
+    if (memory is PooledByteBuffer && memory.pool == this) {
+      val token = memory.token
+      @Suppress("ControlFlowWithEmptyBody")
+      if (token >= 0) while (!bitMap.down(token));
+    }
   }
 
   override fun getMemoryOrNull(): ByteBuffer? {

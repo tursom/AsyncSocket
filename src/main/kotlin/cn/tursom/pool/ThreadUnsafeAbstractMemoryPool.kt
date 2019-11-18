@@ -37,8 +37,11 @@ abstract class ThreadUnsafeAbstractMemoryPool(
    */
   private fun allocate(): Int = unsafeAllocate()
 
-  override fun free(token: Int) {
-    if (token in 0 until blockCount) unsafeFree(token)
+  override fun free(memory: ByteBuffer) {
+    if (memory is PooledByteBuffer && memory.pool == this) {
+      val token = memory.token
+      if (token in 0 until blockCount) unsafeFree(token)
+    }
   }
 
   override fun getMemoryOrNull(): ByteBuffer? {

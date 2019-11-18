@@ -9,7 +9,7 @@ interface MemoryPool {
   val staticSize: Boolean get() = true
 
   //  fun allocate(): Int
-  fun free(token: Int)
+  fun free(memory: ByteBuffer)
 
   fun getMemory(): ByteBuffer
   fun getMemoryOrNull(): ByteBuffer?
